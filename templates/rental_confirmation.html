@@ -36,7 +36,7 @@
                         <div class="col-md-6 text-md-end">
                             <h6>Rental Information:</h6>
                             <p class="mb-0">
-                                <strong>Date:</strong> {{ now().strftime('%d-%m-%Y') }}<br>
+                                <strong>Date:</strong> {{ now().strftime('%d-%m-%Y %H:%M:%S') }}<br>
                                 <strong>Invoice #:</strong> {{ vehicle.vehicle_id }}-{{ now().strftime('%Y%m%d%H%M%S') }}
                             </p>
                         </div>
@@ -76,6 +76,10 @@
                                 <td><strong>End Date:</strong></td>
                                 <td>{{ end_date }}</td>
                             </tr>
+                            <tr>
+                                <td><strong>Total Days:</strong></td>
+                                <td><span class="badge bg-primary">{{ days }} day(s)</span></td>
+                            </tr>
                         </table>
                     </div>
                     
@@ -85,7 +89,25 @@
                         <h6>Cost Summary:</h6>
                         <table class="table">
                             <tr>
-                                <td>Total Cost (with discounts applied):</td>
+                                <td><strong>Original Amount:</strong></td>
+                                <td class="text-end">${{ original_cost }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Discount Rate:</strong></td>
+                                <td class="text-end">
+                                    {% if discount_rate|float > 0 %}
+                                        <span class="badge bg-success">{{ "%.0f"|format(discount_rate|float) }}% OFF</span>
+                                    {% else %}
+                                        <span class="text-muted">No discount</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Discount Amount:</strong></td>
+                                <td class="text-end text-success">-${{ "%.2f"|format((original_cost|float - total_cost|float)) }}</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>Final Amount:</strong></td>
                                 <td class="text-end"><h4 class="text-success mb-0">${{ total_cost }}</h4></td>
                             </tr>
                         </table>

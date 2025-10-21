@@ -10,7 +10,7 @@ class IndividualUser(Renter):
     Individual user.
 
     Discount policy:
-      - Rentals of 7 days or more receive a 10% discount (factor 0.9)
+      - Rentals exceeding 7 days (8+ days) receive a 10% discount (factor 0.9)
       - Otherwise no discount (factor 1.0)
     """
     @property
@@ -19,4 +19,4 @@ class IndividualUser(Renter):
 
     def discount_factor(self, days: int) -> float:
         """Return the discount factor based on rental duration in days."""
-        return 0.9 if days >= 7 else 1.0
+        return 0.9 if days > 7 else 1.0

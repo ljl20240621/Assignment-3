@@ -305,6 +305,13 @@ def rent_vehicle(vehicle_id):
             
             period = RentalPeriod(start_date_formatted, end_date_formatted)
             
+            # Calculate rental details for invoice
+            user = user_dao.get_by_id(session['user_id'])
+            days = period.calculate_duration()
+            discount_factor = user.discount_factor(days)
+            original_cost = vehicle.daily_rate * days
+            discount_rate = (1 - discount_factor) * 100  # Convert to percentage
+            
             total_cost = rental_service.rent_vehicle(
                 vehicle_id,
                 session['user_id'],
@@ -315,7 +322,10 @@ def rent_vehicle(vehicle_id):
             return redirect(url_for('rental_confirmation', vehicle_id=vehicle_id, 
                                   start_date=start_date_formatted, 
                                   end_date=end_date_formatted,
-                                  total_cost=total_cost))
+                                  total_cost=f'{total_cost:.2f}',
+                                  original_cost=f'{original_cost:.2f}',
+                                  discount_rate=f'{discount_rate:.2f}',
+                                  days=days))
         
         except ValueError as e:
             flash(str(e), 'danger')
@@ -333,6 +343,9 @@ def rental_confirmation():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     total_cost = request.args.get('total_cost')
+    original_cost = request.args.get('original_cost')
+    discount_rate = request.args.get('discount_rate')
+    days = request.args.get('days')
     
     vehicle = vehicle_dao.get_by_id(vehicle_id)
     user = user_dao.get_by_id(session['user_id'])
@@ -342,7 +355,10 @@ def rental_confirmation():
                          user=user,
                          start_date=start_date,
                          end_date=end_date,
-                         total_cost=total_cost)
+                         total_cost=total_cost,
+                         original_cost=original_cost,
+                         discount_rate=discount_rate,
+                         days=days)
 
 
 @app.route('/return/<vehicle_id>', methods=['POST'])
