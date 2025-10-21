@@ -57,6 +57,9 @@
                                 <td>{{ u.contact_info }}</td>
                                 <td>{{ u.rental_history|length }}</td>
                                 <td>
+                                    <a href="{{ url_for('staff_edit_user', user_id=u.renter_id) }}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
                                     {% if u.renter_id != user.renter_id %}
                                     <form method="POST" action="{{ url_for('staff_delete_user', user_id=u.renter_id) }}" style="display: inline;">
                                         <button type="submit" class="btn btn-sm btn-danger" 
@@ -65,7 +68,7 @@
                                         </button>
                                     </form>
                                     {% else %}
-                                    <span class="text-muted">(You)</span>
+                                    <span class="text-muted ms-2">(You)</span>
                                     {% endif %}
                                 </td>
                             </tr>

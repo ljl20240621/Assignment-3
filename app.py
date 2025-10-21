@@ -132,6 +132,56 @@ def login():
     return render_template('login.html')
 
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page."""
+    if request.method == 'POST':
+        try:
+            username = request.form.get('username')
+            password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
+            name = request.form.get('name')
+            contact_info = request.form.get('contact_info')
+            
+            # Validation
+            if not all([username, password, confirm_password, name, contact_info]):
+                flash('All fields are required.', 'danger')
+                return render_template('register.html')
+            
+            if password != confirm_password:
+                flash('Passwords do not match.', 'danger')
+                return render_template('register.html')
+            
+            if len(password) < 6:
+                flash('Password must be at least 6 characters long.', 'danger')
+                return render_template('register.html')
+            
+            # Check if username already exists
+            if user_dao.find_by_username(username):
+                flash('Username already exists. Please choose another one.', 'danger')
+                return render_template('register.html')
+            
+            # Generate unique user ID
+            import random
+            import string
+            renter_id = 'USER' + ''.join(random.choices(string.digits, k=6))
+            while user_dao.get_by_id(renter_id):
+                renter_id = 'USER' + ''.join(random.choices(string.digits, k=6))
+            
+            # Create Individual user by default
+            user = user_management_service.create_user(
+                'Individual', renter_id, name, contact_info, username, password
+            )
+            
+            flash(f'Registration successful! Welcome, {name}! You can now log in.', 'success')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            flash(f'Registration failed: {str(e)}', 'danger')
+    
+    return render_template('register.html')
+
+
 @app.route('/logout')
 def logout():
     """Logout."""
@@ -361,11 +411,86 @@ def staff_add_user():
     return render_template('staff_add_user.html', user=user)
 
 
+@app.route('/staff/users/edit/<user_id>', methods=['GET', 'POST'])
+@staff_required
+def staff_edit_user(user_id):
+    """Staff: Edit user."""
+    user_to_edit = user_dao.get_by_id(user_id)
+    
+    if not user_to_edit:
+        flash('User not found.', 'danger')
+        return redirect(url_for('staff_users'))
+    
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name')
+            contact_info = request.form.get('contact_info')
+            new_user_type = request.form.get('user_type')
+            
+            # Update basic info
+            if name:
+                user_to_edit.name = name
+            if contact_info:
+                user_to_edit.contact_info = contact_info
+            
+            # If user type changed, we need to create a new instance
+            if new_user_type and new_user_type != user_to_edit.kind:
+                from models.renter_model.corporate_user import CorporateUser
+                from models.renter_model.individual_user import IndividualUser
+                from models.renter_model.staff import Staff
+                
+                # Store current data
+                old_id = user_to_edit.renter_id
+                old_username = user_to_edit.username
+                old_password = user_to_edit.password
+                old_history = list(user_to_edit.rental_history)
+                
+                # Delete old user
+                user_dao.delete(old_id)
+                
+                # Create new user with new type
+                if new_user_type == 'Individual':
+                    new_user = IndividualUser(old_id, name, contact_info, old_username, old_password)
+                elif new_user_type == 'Corporate':
+                    new_user = CorporateUser(old_id, name, contact_info, old_username, old_password)
+                elif new_user_type == 'Staff':
+                    new_user = Staff(old_id, name, contact_info, old_username, old_password)
+                else:
+                    raise ValueError(f"Invalid user type: {new_user_type}")
+                
+                # Restore rental history
+                for record in old_history:
+                    new_user.add_rental_record(record)
+                
+                # Add new user
+                user_dao.add(new_user)
+                
+                flash(f'User role changed to {new_user_type} successfully!', 'success')
+            else:
+                # Just update the existing user
+                user_dao.update(user_to_edit)
+                flash('User updated successfully!', 'success')
+            
+            user_dao.save()
+            return redirect(url_for('staff_users'))
+            
+        except ValueError as e:
+            flash(str(e), 'danger')
+    
+    user = user_dao.get_by_id(session['user_id'])
+    return render_template('staff_edit_user.html', user=user, user_to_edit=user_to_edit)
+
+
 @app.route('/staff/users/delete/<user_id>', methods=['POST'])
 @staff_required
 def staff_delete_user(user_id):
     """Staff: Delete user."""
     try:
+        # Prevent deleting yourself
+        if user_id == session['user_id']:
+            flash('You cannot delete your own account!', 'danger')
+            return redirect(url_for('staff_users'))
+        
         success = user_management_service.delete_user(user_id)
         
         if success:

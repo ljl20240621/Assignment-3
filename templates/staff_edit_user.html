@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{{ url_for('staff_users') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to User Management
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-pencil-square"></i> Edit User</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('staff_edit_user', user_id=user_to_edit.renter_id) }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="renter_id" class="form-label">User ID</label>
+                            <input type="text" class="form-control" id="renter_id" value="{{ user_to_edit.renter_id }}" disabled>
+                            <div class="form-text">Cannot be changed</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" value="{{ user_to_edit.username }}" disabled>
+                            <div class="form-text">Cannot be changed</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ user_to_edit.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="contact_info" class="form-label">Contact Information *</label>
+                        <input type="text" class="form-control" id="contact_info" name="contact_info" value="{{ user_to_edit.contact_info }}" required>
+                        <div class="form-text">Email or phone number</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="user_type" class="form-label">User Role *</label>
+                        <select class="form-select" id="user_type" name="user_type" required>
+                            <option value="Individual" {% if user_to_edit.kind == 'Individual' %}selected{% endif %}>Individual (10% discount for 7+ days)</option>
+                            <option value="Corporate" {% if user_to_edit.kind == 'Corporate' %}selected{% endif %}>Corporate (15% discount always)</option>
+                            <option value="Staff" {% if user_to_edit.kind == 'Staff' %}selected{% endif %}>Staff (Administrator)</option>
+                        </select>
+                        <div class="form-text">
+                            <strong>Warning:</strong> Changing the user role will affect their discount rate and permissions.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Current Status:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Current Role:</strong> {{ user_to_edit.kind }}</li>
+                            <li><strong>Total Rentals:</strong> {{ user_to_edit.rental_history|length }}</li>
+                            <li><strong>Active Rentals:</strong> {{ user_to_edit.get_active_rentals()|length }}</li>
+                        </ul>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('Are you sure you want to update this user?')">
+                            <i class="bi bi-check-circle"></i> Save Changes
+                        </button>
+                        <a href="{{ url_for('staff_users') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
