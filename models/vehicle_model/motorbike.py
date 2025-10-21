@@ -1,5 +1,9 @@
-from vehicle import Vehicle
-from rental_period import RentalPeriod
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from vehicle_model.vehicle import Vehicle
+from services.rental_period import RentalPeriod
 
 class Motorbike(Vehicle):
     """

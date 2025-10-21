@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Add User - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{{ url_for('staff_users') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to User Management
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Add New User</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('staff_add_user') }}">
+                    <div class="mb-3">
+                        <label for="user_type" class="form-label">User Type *</label>
+                        <select class="form-select" id="user_type" name="user_type" required>
+                            <option value="">Select user type...</option>
+                            <option value="Individual">Individual</option>
+                            <option value="Corporate">Corporate</option>
+                            <option value="Staff">Staff</option>
+                        </select>
+                        <div class="form-text">Individual: 10% discount for 7+ days | Corporate: 15% discount | Staff: Admin access</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="renter_id" class="form-label">User ID *</label>
+                        <input type="text" class="form-control" id="renter_id" name="renter_id" required>
+                        <div class="form-text">Unique identifier for the user</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="contact_info" class="form-label">Contact Information *</label>
+                        <input type="text" class="form-control" id="contact_info" name="contact_info" 
+                               placeholder="Email or phone number" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username *</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <div class="form-text">Used for login</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password *</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Create User
+                        </button>
+                        <a href="{{ url_for('staff_users') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

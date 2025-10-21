@@ -5,7 +5,10 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from rental_period import RentalPeriod
+    import sys
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models'))
+    from services.rental_period import RentalPeriod
 
 class VehicleRentalError(Exception):
     """Base class for all custom vehicle rental exceptions."""

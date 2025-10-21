@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-graph-up"></i> Business Analytics
+        </h1>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h6 class="card-title">Total Revenue</h6>
+                <h2>${{ summary.total_revenue|round(2) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h6 class="card-title">Total Rentals</h6>
+                <h2>{{ summary.total_rentals }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h6 class="card-title">Active Rentals</h6>
+                <h2>{{ summary.active_rentals }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h6 class="card-title">Overdue Rentals</h6>
+                <h2>{{ summary.overdue_rentals }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Breakdown -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Revenue by Vehicle Type</h5>
+            </div>
+            <div class="card-body">
+                {% if summary.revenue_by_vehicle_type %}
+                <table class="table">
+                    {% for vtype, revenue in summary.revenue_by_vehicle_type.items() %}
+                    <tr>
+                        <td><strong>{{ vtype }}</strong></td>
+                        <td class="text-end">${{ revenue|round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">No data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Revenue by User Type</h5>
+            </div>
+            <div class="card-body">
+                {% if summary.revenue_by_user_type %}
+                <table class="table">
+                    {% for utype, revenue in summary.revenue_by_user_type.items() %}
+                    <tr>
+                        <td><strong>{{ utype }}</strong></td>
+                        <td class="text-end">${{ revenue|round(2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">No data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Most Rented Vehicles -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-trophy"></i> Most Rented Vehicles</h5>
+            </div>
+            <div class="card-body">
+                {% if most_rented %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Vehicle</th>
+                            <th>Rentals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehicle, count in most_rented %}
+                        <tr>
+                            <td><strong>#{{ loop.index }}</strong></td>
+                            <td>
+                                <strong>{{ vehicle.make }} {{ vehicle.model }}</strong><br>
+                                <small class="text-muted">{{ vehicle.__class__.__name__ }} - {{ vehicle.year }}</small>
+                            </td>
+                            <td><span class="badge bg-success">{{ count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">No rental data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Least Rented Vehicles -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Least Rented Vehicles</h5>
+            </div>
+            <div class="card-body">
+                {% if least_rented %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Rentals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehicle, count in least_rented %}
+                        <tr>
+                            <td>
+                                <strong>{{ vehicle.make }} {{ vehicle.model }}</strong><br>
+                                <small class="text-muted">{{ vehicle.__class__.__name__ }} - {{ vehicle.year }}</small>
+                            </td>
+                            <td><span class="badge bg-warning">{{ count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted mb-0">No rental data available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

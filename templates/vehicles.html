@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Vehicles - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-car-front"></i> Browse Vehicles
+        </h1>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter Vehicles</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('vehicles') }}">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="type" class="form-label">Vehicle Type</label>
+                            <select class="form-select" name="type" id="type">
+                                <option value="">All Types</option>
+                                <option value="Car" {% if current_type == 'Car' %}selected{% endif %}>Car</option>
+                                <option value="Motorbike" {% if current_type == 'Motorbike' %}selected{% endif %}>Motorbike</option>
+                                <option value="Truck" {% if current_type == 'Truck' %}selected{% endif %}>Truck</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="make" class="form-label">Brand/Make</label>
+                            <select class="form-select" name="make" id="make">
+                                <option value="">All Brands</option>
+                                {% for brand in all_makes %}
+                                <option value="{{ brand }}" {% if current_make == brand %}selected{% endif %}>{{ brand }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="price_range" class="form-label">Price Range (per day)</label>
+                            <select class="form-select" name="price_range" id="price_range">
+                                <option value="">All Prices</option>
+                                <option value="low" {% if current_price_range == 'low' %}selected{% endif %}>$0 - $50</option>
+                                <option value="medium" {% if current_price_range == 'medium' %}selected{% endif %}>$51 - $100</option>
+                                <option value="high" {% if current_price_range == 'high' %}selected{% endif %}>$101+</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vehicle Grid -->
+<div class="row">
+    {% if vehicles %}
+        {% for vehicle in vehicles %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 vehicle-card">
+                <img src="{{ url_for('static', filename='images/' + vehicle.__class__.__name__.lower() + '.jpg') }}" 
+                     class="card-img-top" 
+                     alt="{{ vehicle.make }} {{ vehicle.model }}"
+                     onerror="this.src='{{ url_for('static', filename='images/default.jpg') }}'">
+                <div class="card-body">
+                    <h5 class="card-title">{{ vehicle.make }} {{ vehicle.model }}</h5>
+                    <p class="card-text">
+                        <span class="badge bg-secondary">{{ vehicle.__class__.__name__ }}</span>
+                        <span class="badge bg-info">{{ vehicle.year }}</span>
+                    </p>
+                    <p class="card-text">
+                        {% if vehicle.__class__.__name__ == 'Car' %}
+                        <small><i class="bi bi-door-closed"></i> {{ vehicle.num_doors }} doors</small>
+                        {% elif vehicle.__class__.__name__ == 'Motorbike' %}
+                        <small><i class="bi bi-speedometer"></i> {{ vehicle.engine_cc }}cc</small>
+                        {% elif vehicle.__class__.__name__ == 'Truck' %}
+                        <small><i class="bi bi-box-seam"></i> {{ vehicle.load_capacity_tons }}t capacity</small>
+                        {% endif %}
+                    </p>
+                    <h4 class="text-primary">${{ vehicle.daily_rate|round(2) }}<small class="text-muted">/day</small></h4>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('vehicle_detail', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-info-circle"></i> View Details
+                        </a>
+                        <a href="{{ url_for('rent_vehicle', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-success">
+                            <i class="bi bi-cart-plus"></i> Rent Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No vehicles found matching your criteria. Try adjusting your filters.
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .vehicle-card {
+        transition: transform 0.2s;
+    }
+    
+    .vehicle-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .card-img-top {
+        height: 200px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+

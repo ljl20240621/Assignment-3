@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-activity"></i> User Activity Logs
+        </h1>
+        <p class="text-muted">Track all rental and return activities in the system</p>
+    </div>
+</div>
+
+{% if activities %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-list-ul"></i> Recent Activities ({{ activities|length }})</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for activity in activities %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">
+                                    {% if activity.type == 'rental' %}
+                                    <i class="bi bi-arrow-right-circle-fill text-primary"></i>
+                                    <span class="badge bg-primary">RENTAL</span>
+                                    {% else %}
+                                    <i class="bi bi-arrow-left-circle-fill text-success"></i>
+                                    <span class="badge bg-success">RETURN</span>
+                                    {% endif %}
+                                </h6>
+                                <p class="mb-1">
+                                    <strong>{{ activity.user }}</strong> 
+                                    <small class="text-muted">(<code>{{ activity.user_id }}</code>)</small>
+                                    {% if activity.type == 'rental' %}
+                                    rented
+                                    {% else %}
+                                    returned
+                                    {% endif %}
+                                    vehicle <code>{{ activity.vehicle_id }}</code>
+                                </p>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> {{ activity.period }} | 
+                                    <i class="bi bi-cash"></i> ${{ activity.cost|round(2) }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted">{{ activity.date }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Summary -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6>Total Rental Events</h6>
+                <h3>{{ activities | selectattr('type', 'equalto', 'rental') | list | length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6>Total Return Events</h6>
+                <h3>{{ activities | selectattr('type', 'equalto', 'return') | list | length }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No activity logs available yet.
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

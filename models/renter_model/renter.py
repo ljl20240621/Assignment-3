@@ -14,10 +14,12 @@ class Renter(ABC):
     basic profile fields ``name`` and ``contact_info``.
     """
 
-    def __init__(self, renter_id: str, name: str, contact_info: str):
+    def __init__(self, renter_id: str, name: str, contact_info: str, username: str = None, password: str = None):
         self.__renter_id = renter_id
         self.__name = name
         self.__contact_info = contact_info
+        self.__username = username or renter_id  # Default username to renter_id
+        self.__password = password or "password123"  # Default password
         # Rental history will be managed by VehicleRental system
         self.__rental_history: List["RentalRecord"] = []
 
@@ -45,6 +47,22 @@ class Renter(ABC):
     @contact_info.setter
     def contact_info(self, value: str) -> None:
         self.__contact_info = value
+
+    @property
+    def username(self) -> str:
+        return self.__username
+
+    @username.setter
+    def username(self, value: str) -> None:
+        self.__username = value
+
+    @property
+    def password(self) -> str:
+        return self.__password
+
+    @password.setter
+    def password(self, value: str) -> None:
+        self.__password = value
 
     # ---- Rental History Access ----
     @property

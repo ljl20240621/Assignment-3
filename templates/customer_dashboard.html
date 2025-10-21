@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-speedometer2"></i> Welcome, {{ user.name }}!
+        </h1>
+        <p class="lead text-muted">{{ user.kind }} User - {{ user.contact_info }}</p>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-car-front"></i> Active Rentals
+                </h5>
+                <h2 class="mb-0">{{ active_rentals|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-check-circle"></i> Total Rentals
+                </h5>
+                <h2 class="mb-0">{{ rental_history|length }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-cash"></i> Discount Rate
+                </h5>
+                <h2 class="mb-0">
+                    {% if user.kind == 'Corporate' %}15%{% else %}10%*{% endif %}
+                </h2>
+                {% if user.kind == 'Individual' %}
+                <small>*For rentals 7+ days</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-lightning-fill"></i> Quick Actions</h5>
+                <div class="d-grid gap-2 d-md-flex">
+                    <a href="{{ url_for('vehicles') }}" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Browse Vehicles
+                    </a>
+                    <a href="{{ url_for('my_rentals') }}" class="btn btn-secondary">
+                        <i class="bi bi-list-check"></i> View My Rentals
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Rentals -->
+{% if active_rentals %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-car-front"></i> Active Rentals</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Vehicle ID</th>
+                                <th>Period</th>
+                                <th>Cost</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rental in active_rentals %}
+                            <tr>
+                                <td><code>{{ rental.vehicle_id }}</code></td>
+                                <td>{{ rental.period.start_date }} to {{ rental.period.end_date }}</td>
+                                <td>${{ rental.total_cost|round(2) }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to return this vehicle?')">
+                                            <i class="bi bi-check-circle"></i> Return
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Rental History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Rental History</h5>
+            </div>
+            <div class="card-body">
+                {% if rental_history %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Vehicle ID</th>
+                                <th>Period</th>
+                                <th>Cost</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rental in rental_history[-5:] | reverse %}
+                            <tr>
+                                <td><code>{{ rental.vehicle_id }}</code></td>
+                                <td>{{ rental.period.start_date }} to {{ rental.period.end_date }}</td>
+                                <td>${{ rental.total_cost|round(2) }}</td>
+                                <td>
+                                    {% if rental.returned %}
+                                    <span class="badge bg-success">Returned</span>
+                                    {% else %}
+                                    <span class="badge bg-primary">Active</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ url_for('my_rentals') }}" class="btn btn-sm btn-outline-primary">
+                    View All Rentals <i class="bi bi-arrow-right"></i>
+                </a>
+                {% else %}
+                <p class="text-muted mb-0">No rental history yet. <a href="{{ url_for('vehicles') }}">Start browsing vehicles!</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

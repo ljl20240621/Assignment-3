@@ -1,4 +1,8 @@
-from renter import Renter
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from renter_model.renter import Renter
 
 
 class CorporateUser(Renter):

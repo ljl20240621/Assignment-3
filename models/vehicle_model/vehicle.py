@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rental_period import RentalPeriod
-from exceptions import OverlappingBookingError
+from services.rental_period import RentalPeriod
+from common.exceptions import OverlappingBookingError
 
 
 @dataclass

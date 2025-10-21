@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Rental Confirmation - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-check-circle"></i> Rental Confirmed!</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h5><i class="bi bi-check-circle-fill"></i> Your rental has been successfully processed!</h5>
+                    <p class="mb-0">Please review your invoice below and save or print it for your records.</p>
+                </div>
+                
+                <hr>
+                
+                <div class="invoice" id="invoice">
+                    <div class="text-center mb-4">
+                        <h2><i class="bi bi-car-front-fill"></i> Vehicle Rental System</h2>
+                        <p class="text-muted">Rental Invoice</p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Customer Information:</h6>
+                            <p class="mb-0">
+                                <strong>Name:</strong> {{ user.name }}<br>
+                                <strong>ID:</strong> {{ user.renter_id }}<br>
+                                <strong>Type:</strong> {{ user.kind }} User<br>
+                                <strong>Contact:</strong> {{ user.contact_info }}
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <h6>Rental Information:</h6>
+                            <p class="mb-0">
+                                <strong>Date:</strong> {{ now().strftime('%d-%m-%Y') }}<br>
+                                <strong>Invoice #:</strong> {{ vehicle.vehicle_id }}-{{ now().strftime('%Y%m%d%H%M%S') }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-4">
+                        <h6>Vehicle Details:</h6>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p class="mb-0">
+                                    <strong>{{ vehicle.make }} {{ vehicle.model }}</strong><br>
+                                    <span class="badge bg-secondary">{{ vehicle.__class__.__name__ }}</span>
+                                    <span class="badge bg-info">{{ vehicle.year }}</span><br>
+                                    Vehicle ID: <code>{{ vehicle.vehicle_id }}</code>
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <p class="mb-0">
+                                    <strong>Daily Rate:</strong> ${{ vehicle.daily_rate|round(2) }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-4">
+                        <h6>Rental Period:</h6>
+                        <table class="table">
+                            <tr>
+                                <td><strong>Start Date:</strong></td>
+                                <td>{{ start_date }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>End Date:</strong></td>
+                                <td>{{ end_date }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-4">
+                        <h6>Cost Summary:</h6>
+                        <table class="table">
+                            <tr>
+                                <td>Total Cost (with discounts applied):</td>
+                                <td class="text-end"><h4 class="text-success mb-0">${{ total_cost }}</h4></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center text-muted">
+                        <small>Thank you for choosing our Vehicle Rental System!</small>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <button onclick="window.print()" class="btn btn-primary">
+                        <i class="bi bi-printer"></i> Print Invoice
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-success">
+                        <i class="bi bi-house"></i> Return to Dashboard
+                    </a>
+                    <a href="{{ url_for('vehicles') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-car-front"></i> Browse More Vehicles
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .navbar, .btn, footer, .alert {
+            display: none !important;
+        }
+        
+        .invoice {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+

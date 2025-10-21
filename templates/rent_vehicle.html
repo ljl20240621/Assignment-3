@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Rent {{ vehicle.make }} {{ vehicle.model }} - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{{ url_for('vehicle_detail', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Vehicle Details
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-cart-plus"></i> Rent Vehicle</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <img src="{{ url_for('static', filename='images/' + vehicle.__class__.__name__.lower() + '.jpg') }}" 
+                             class="img-fluid rounded" 
+                             alt="{{ vehicle.make }} {{ vehicle.model }}"
+                             onerror="this.src='{{ url_for('static', filename='images/default.jpg') }}'">
+                    </div>
+                    <div class="col-md-8">
+                        <h5>{{ vehicle.make }} {{ vehicle.model }}</h5>
+                        <p class="mb-1">
+                            <span class="badge bg-secondary">{{ vehicle.__class__.__name__ }}</span>
+                            <span class="badge bg-info">{{ vehicle.year }}</span>
+                        </p>
+                        <h4 class="text-primary">${{ vehicle.daily_rate|round(2) }}<small class="text-muted">/day</small></h4>
+                        
+                        {% if user.kind == 'Corporate' %}
+                        <div class="alert alert-success py-2">
+                            <i class="bi bi-tag"></i> <strong>15% Corporate Discount</strong> will be applied!
+                        </div>
+                        {% elif user.kind == 'Individual' %}
+                        <div class="alert alert-info py-2">
+                            <i class="bi bi-tag"></i> <strong>10% Discount</strong> for rentals 7+ days!
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <form method="POST" action="{{ url_for('rent_vehicle', vehicle_id=vehicle.vehicle_id) }}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   min="{{ now().strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                   min="{{ now().strftime('%Y-%m-%d') }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Rental Terms:</h6>
+                        <ul class="mb-0">
+                            <li>Minimum rental period: 1 day</li>
+                            <li>Vehicle must be returned by end date</li>
+                            <li>Late returns will be flagged as overdue</li>
+                            <li>Total cost will be calculated based on duration and your user type</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Confirm Rental
+                        </button>
+                        <a href="{{ url_for('vehicles') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add date validation
+    document.getElementById('end_date').addEventListener('change', function() {
+        const startDate = document.getElementById('start_date').value;
+        const endDate = this.value;
+        
+        if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+            alert('End date must be after start date!');
+            this.value = '';
+        }
+    });
+    
+    document.getElementById('start_date').addEventListener('change', function() {
+        const endDateInput = document.getElementById('end_date');
+        endDateInput.min = this.value;
+    });
+</script>
+{% endblock %}
+

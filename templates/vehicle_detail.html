@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}{{ vehicle.make }} {{ vehicle.model }} - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <a href="{{ url_for('vehicles') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Vehicles
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <img src="{{ url_for('static', filename='images/' + vehicle.__class__.__name__.lower() + '.jpg') }}" 
+                 class="card-img-top" 
+                 alt="{{ vehicle.make }} {{ vehicle.model }}"
+                 onerror="this.src='{{ url_for('static', filename='images/default.jpg') }}'">
+            <div class="card-body">
+                <h2 class="card-title">{{ vehicle.make }} {{ vehicle.model }}</h2>
+                <p class="lead">
+                    <span class="badge bg-secondary">{{ vehicle.__class__.__name__ }}</span>
+                    <span class="badge bg-info">{{ vehicle.year }}</span>
+                </p>
+                
+                <h3 class="text-primary mb-3">${{ vehicle.daily_rate|round(2) }}<small class="text-muted">/day</small></h3>
+                
+                <h5>Specifications:</h5>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><strong>Vehicle ID:</strong></span>
+                        <code>{{ vehicle.vehicle_id }}</code>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><strong>Make:</strong></span>
+                        <span>{{ vehicle.make }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><strong>Model:</strong></span>
+                        <span>{{ vehicle.model }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><strong>Year:</strong></span>
+                        <span>{{ vehicle.year }}</span>
+                    </li>
+                    {% if vehicle.__class__.__name__ == 'Car' %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><strong>Doors:</strong></span>
+                        <span>{{ vehicle.num_doors }}</span>
+                    </li>
+                    {% elif vehicle.__class__.__name__ == 'Motorbike' %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><strong>Engine:</strong></span>
+                        <span>{{ vehicle.engine_cc }}cc</span>
+                    </li>
+                    {% elif vehicle.__class__.__name__ == 'Truck' %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><strong>Load Capacity:</strong></span>
+                        <span>{{ vehicle.load_capacity_tons }}t</span>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                {% if user.kind != 'Staff' %}
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('rent_vehicle', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-success btn-lg">
+                        <i class="bi bi-cart-plus"></i> Rent This Vehicle
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Rental Information</h5>
+            </div>
+            <div class="card-body">
+                <h6>Your Discount:</h6>
+                {% if user.kind == 'Corporate' %}
+                <p class="text-success"><strong>15% discount</strong> on all rentals as a Corporate user!</p>
+                {% elif user.kind == 'Individual' %}
+                <p class="text-success"><strong>10% discount</strong> for rentals of 7 days or more!</p>
+                {% else %}
+                <p class="text-muted">Staff members cannot rent vehicles.</p>
+                {% endif %}
+                
+                {% if user.kind != 'Staff' %}
+                <h6 class="mt-3">Price Breakdown:</h6>
+                <ul>
+                    <li>Base rate: ${{ vehicle.daily_rate|round(2) }}/day</li>
+                    {% if vehicle.__class__.__name__ == 'Car' %}
+                        {% if vehicle.num_doors <= 2 %}
+                        <li>Sports car premium: +10%</li>
+                        {% elif vehicle.num_doors >= 5 %}
+                        <li>Large vehicle premium: +5%</li>
+                        {% endif %}
+                    {% elif vehicle.__class__.__name__ == 'Motorbike' %}
+                        <li>Helmet fee: $5/day</li>
+                        {% if vehicle.engine_cc >= 600 %}
+                        <li>High displacement premium: +5%</li>
+                        {% endif %}
+                    {% elif vehicle.__class__.__name__ == 'Truck' %}
+                        <li>Logistics fee: $20</li>
+                        {% if vehicle.load_capacity_tons > 3.0 %}
+                        <li>Heavy load surcharge: +10%</li>
+                        {% endif %}
+                    {% endif %}
+                    <li>Your discount applied at checkout</li>
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Rental History</h5>
+            </div>
+            <div class="card-body">
+                {% if rental_history %}
+                <p class="text-muted">This vehicle has been rented <strong>{{ rental_history|length }}</strong> time(s).</p>
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rental in rental_history | reverse %}
+                            <tr>
+                                <td>{{ rental.period.start_date }} to {{ rental.period.end_date }}</td>
+                                <td>
+                                    {% if rental.returned %}
+                                    <span class="badge bg-success">Returned</span>
+                                    {% else %}
+                                    <span class="badge bg-primary">Active</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">This vehicle has not been rented yet. Be the first!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-img-top {
+        height: 300px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+

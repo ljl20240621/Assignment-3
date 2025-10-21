@@ -1,8 +1,11 @@
 import atexit
 import pickle
 from typing import Dict, Optional, Tuple, List
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models'))
 
-from exceptions import (
+from common.exceptions import (
     PersistenceError,
     OverlappingBookingError,
     UserNotFoundError,
@@ -10,9 +13,9 @@ from exceptions import (
     VehicleNotFoundError,
     ReturnNotFoundError,
 )
-from rental_period import RentalPeriod
-from renter import Renter
-from vehicle import Vehicle, RentalRecord
+from services.rental_period import RentalPeriod
+from renter_model.renter import Renter
+from vehicle_model.vehicle import Vehicle, RentalRecord
 
 
 class VehicleRental:

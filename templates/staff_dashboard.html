@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Dashboard - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-speedometer2"></i> Staff Dashboard
+        </h1>
+        <p class="lead text-muted">Welcome, {{ user.name }} - System Administrator</p>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-car-front"></i> Total Vehicles</h5>
+                <h2 class="mb-0">{{ summary.total_vehicles }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-people"></i> Total Users</h5>
+                <h2 class="mb-0">{{ summary.total_users }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-list-check"></i> Active Rentals</h5>
+                <h2 class="mb-0">{{ summary.active_rentals }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> Overdue</h5>
+                <h2 class="mb-0">{{ summary.overdue_rentals }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Stats -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Revenue Summary</h5>
+            </div>
+            <div class="card-body">
+                <h2 class="text-success">${{ summary.total_revenue|round(2) }}</h2>
+                <p class="text-muted mb-0">Total Revenue from All Rentals</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Most Rented Vehicles -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-trophy"></i> Most Rented Vehicles</h5>
+            </div>
+            <div class="card-body">
+                {% if most_rented %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Rentals</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vehicle, count in most_rented %}
+                            <tr>
+                                <td>{{ vehicle.make }} {{ vehicle.model }}</td>
+                                <td><span class="badge bg-primary">{{ count }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No rental data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Overdue Rentals -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Overdue Rentals</h5>
+            </div>
+            <div class="card-body">
+                {% if overdue_rentals %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>User</th>
+                                <th>End Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rental in overdue_rentals[:5] %}
+                            <tr>
+                                <td><code>{{ rental.vehicle_id }}</code></td>
+                                <td><code>{{ rental.renter_id }}</code></td>
+                                <td>{{ rental.period.end_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No overdue rentals.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                <div class="list-group">
+                    {% for activity in recent_activities %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">
+                                {% if activity.type == 'rental' %}
+                                <i class="bi bi-arrow-right-circle text-primary"></i> Rental
+                                {% else %}
+                                <i class="bi bi-arrow-left-circle text-success"></i> Return
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted">{{ activity.date }}</small>
+                        </div>
+                        <p class="mb-1">
+                            <strong>{{ activity.user }}</strong> 
+                            {% if activity.type == 'rental' %}rented{% else %}returned{% endif %}
+                            <code>{{ activity.vehicle_id }}</code>
+                        </p>
+                        <small class="text-muted">Cost: ${{ activity.cost|round(2) }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                <a href="{{ url_for('staff_activities') }}" class="btn btn-sm btn-outline-primary mt-3">
+                    View All Activities <i class="bi bi-arrow-right"></i>
+                </a>
+                {% else %}
+                <p class="text-muted mb-0">No recent activities.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}My Rentals - Vehicle Rental System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-list-check"></i> My Rental History
+        </h1>
+    </div>
+</div>
+
+{% if rental_history %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Vehicle ID</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Duration</th>
+                                <th>Total Cost</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rental in rental_history | reverse %}
+                            <tr>
+                                <td><code>{{ rental.vehicle_id }}</code></td>
+                                <td>{{ rental.period.start_date }}</td>
+                                <td>{{ rental.period.end_date }}</td>
+                                <td>{{ rental.period.calculate_duration() }} day(s)</td>
+                                <td>${{ rental.total_cost|round(2) }}</td>
+                                <td>
+                                    {% if rental.returned %}
+                                    <span class="badge bg-success">Returned</span>
+                                    {% else %}
+                                    <span class="badge bg-primary">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not rental.returned %}
+                                    <form method="POST" action="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-success" 
+                                                onclick="return confirm('Are you sure you want to return this vehicle?')">
+                                            <i class="bi bi-check-circle"></i> Return
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6>Total Rentals</h6>
+                <h3>{{ rental_history|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6>Total Spent</h6>
+                <h3>${{ rental_history | sum(attribute='total_cost') | round(2) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6>Active Rentals</h6>
+                <h3>{{ rental_history | selectattr('returned', 'equalto', False) | list | length }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h5><i class="bi bi-info-circle"></i> No Rental History</h5>
+            <p class="mb-0">You haven't rented any vehicles yet. <a href="{{ url_for('vehicles') }}">Browse available vehicles</a> to get started!</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
