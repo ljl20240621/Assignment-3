@@ -88,6 +88,54 @@
 
 {% block extra_js %}
 <script>
+    // Parse booked date ranges
+    const bookedRanges = {{ booked_ranges|safe }};
+    
+    // Function to check if a date is within any booked range
+    function isDateBooked(checkDate) {
+        const date = new Date(checkDate);
+        for (let range of bookedRanges) {
+            const startDate = new Date(range.start);
+            const endDate = new Date(range.end);
+            if (date >= startDate && date <= endDate) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Function to check if date range overlaps with any booked range
+    function doesRangeOverlap(startDate, endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        for (let range of bookedRanges) {
+            const bookedStart = new Date(range.start);
+            const bookedEnd = new Date(range.end);
+            
+            // Check for any overlap
+            if (start <= bookedEnd && end >= bookedStart) {
+                return range;
+            }
+        }
+        return null;
+    }
+    
+    // Function to get all dates in a range that are booked
+    function getBookedDatesInRange(startDate, endDate) {
+        const dates = [];
+        let current = new Date(startDate);
+        const end = new Date(endDate);
+        
+        while (current <= end) {
+            if (isDateBooked(current.toISOString().split('T')[0])) {
+                dates.push(new Date(current).toISOString().split('T')[0]);
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        return dates;
+    }
+    
     // Add date validation
     document.getElementById('end_date').addEventListener('change', function() {
         const startDate = document.getElementById('start_date').value;
@@ -96,13 +144,67 @@
         if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
             alert('End date must be after start date!');
             this.value = '';
+            return;
+        }
+        
+        // Check for overlap with booked ranges
+        if (startDate && endDate) {
+            const overlap = doesRangeOverlap(startDate, endDate);
+            if (overlap) {
+                alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
+                this.value = '';
+            }
         }
     });
     
     document.getElementById('start_date').addEventListener('change', function() {
         const endDateInput = document.getElementById('end_date');
+        const startDate = this.value;
         endDateInput.min = this.value;
+        
+        // Check if start date itself is booked
+        if (isDateBooked(startDate)) {
+            alert('This date is already booked. Please choose a different date.');
+            this.value = '';
+            return;
+        }
+        
+        // If end date is already set, validate the range
+        if (endDateInput.value) {
+            const overlap = doesRangeOverlap(startDate, endDateInput.value);
+            if (overlap) {
+                alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
+                endDateInput.value = '';
+            }
+        }
     });
+    
+    // Form submission validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+        
+        if (startDate && endDate) {
+            const overlap = doesRangeOverlap(startDate, endDate);
+            if (overlap) {
+                e.preventDefault();
+                alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
+                return false;
+            }
+        }
+    });
+    
+    // Display booked dates info if any
+    if (bookedRanges.length > 0) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-warning mt-3';
+        alertDiv.innerHTML = '<h6><i class="bi bi-exclamation-triangle"></i> Currently Booked Dates:</h6><ul class="mb-0">';
+        bookedRanges.forEach(range => {
+            alertDiv.innerHTML += `<li>From ${range.start} to ${range.end}</li>`;
+        });
+        alertDiv.innerHTML += '</ul>';
+        document.querySelector('.alert.alert-info').parentNode.insertBefore(alertDiv, document.querySelector('.alert.alert-info').nextSibling);
+    }
 </script>
 {% endblock %}
 

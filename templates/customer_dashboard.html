@@ -96,11 +96,9 @@
                                 <td>{{ rental.period.start_date }} to {{ rental.period.end_date }}</td>
                                 <td>${{ rental.total_cost|round(2) }}</td>
                                 <td>
-                                    <form method="POST" action="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" style="display: inline;">
-                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Are you sure you want to return this vehicle?')">
-                                            <i class="bi bi-check-circle"></i> Return
-                                        </button>
-                                    </form>
+                                    <a href="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-arrow-return-left"></i> Return
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}

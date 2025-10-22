@@ -46,12 +46,9 @@
                                 </td>
                                 <td>
                                     {% if not rental.returned %}
-                                    <form method="POST" action="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" style="display: inline;">
-                                        <button type="submit" class="btn btn-sm btn-success" 
-                                                onclick="return confirm('Are you sure you want to return this vehicle?')">
-                                            <i class="bi bi-check-circle"></i> Return
-                                        </button>
-                                    </form>
+                                    <a href="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-arrow-return-left"></i> Return
+                                    </a>
                                     {% else %}
                                     <span class="text-muted">-</span>
                                     {% endif %}

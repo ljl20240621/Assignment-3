@@ -332,6 +332,15 @@ def rent_vehicle(vehicle_id):
         flash('Vehicle not found.', 'danger')
         return redirect(url_for('vehicles'))
     
+    # Get booked date ranges for this vehicle
+    booked_ranges = []
+    for rental in vehicle.rental_history:
+        if not rental.returned:  # Only consider active rentals
+            booked_ranges.append({
+                'start': rental.period.start_date,
+                'end': rental.period.end_date
+            })
+    
     if request.method == 'POST':
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
@@ -372,7 +381,22 @@ def rent_vehicle(vehicle_id):
     
     user = user_dao.get_by_id(session['user_id'])
     
-    return render_template('rent_vehicle.html', vehicle=vehicle, user=user)
+    # Convert booked ranges to JavaScript-friendly format (YYYY-MM-DD)
+    import json
+    booked_ranges_js = []
+    for rental_range in booked_ranges:
+        # Convert DD-MM-YYYY to YYYY-MM-DD
+        start_parts = rental_range['start'].split('-')
+        end_parts = rental_range['end'].split('-')
+        booked_ranges_js.append({
+            'start': f'{start_parts[2]}-{start_parts[1]}-{start_parts[0]}',
+            'end': f'{end_parts[2]}-{end_parts[1]}-{end_parts[0]}'
+        })
+    
+    return render_template('rent_vehicle.html', 
+                         vehicle=vehicle, 
+                         user=user,
+                         booked_ranges=json.dumps(booked_ranges_js))
 
 
 @app.route('/rental-confirmation')
@@ -401,22 +425,55 @@ def rental_confirmation():
                          days=days)
 
 
-@app.route('/return/<vehicle_id>', methods=['POST'])
+@app.route('/return/<vehicle_id>', methods=['GET', 'POST'])
 @customer_required
 def return_vehicle(vehicle_id):
     """Return a rented vehicle."""
-    try:
-        success = rental_service.return_vehicle(vehicle_id, session['user_id'])
+    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    user = user_dao.get_by_id(session['user_id'])
+    
+    if not vehicle:
+        flash('Vehicle not found.', 'danger')
+        return redirect(url_for('my_rentals'))
+    
+    # Find active rental for this vehicle and user
+    active_rental = None
+    for rental in user.rental_history:
+        if rental.vehicle_id == vehicle_id and not rental.returned:
+            active_rental = rental
+            break
+    
+    if not active_rental:
+        flash('No active rental found for this vehicle.', 'warning')
+        return redirect(url_for('my_rentals'))
+    
+    if request.method == 'POST':
+        return_date = request.form.get('return_date')
         
-        if success:
-            flash('Vehicle returned successfully!', 'success')
-        else:
-            flash('No active rental found for this vehicle.', 'warning')
+        try:
+            # Convert date from YYYY-MM-DD to DD-MM-YYYY
+            return_dt = datetime.strptime(return_date, '%Y-%m-%d')
+            return_date_formatted = return_dt.strftime('%d-%m-%Y')
+            
+            # Validate return date
+            start_dt = datetime.strptime(active_rental.period.start_date, '%d-%m-%Y')
+            if return_dt < start_dt:
+                flash('Return date cannot be before the rental start date!', 'danger')
+                return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental)
+            
+            # Return the vehicle
+            success = rental_service.return_vehicle(vehicle_id, session['user_id'])
+            
+            if success:
+                flash('Vehicle returned successfully!', 'success')
+                return redirect(url_for('my_rentals'))
+            else:
+                flash('Failed to return vehicle. Please try again.', 'danger')
+        
+        except ValueError as e:
+            flash(str(e), 'danger')
     
-    except ValueError as e:
-        flash(str(e), 'danger')
-    
-    return redirect(url_for('dashboard'))
+    return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental)
 
 
 @app.route('/my-rentals')
