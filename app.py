@@ -91,6 +91,33 @@ user_management_service = UserManagementService(user_dao)
 vehicle_management_service = VehicleManagementService(vehicle_dao)
 
 
+# Helper function to generate user ID based on type
+def generate_user_id(user_type):
+    """Generate a unique user ID based on user type."""
+    # Determine prefix based on user type
+    if user_type == 'Staff':
+        prefix = 'STAFF'
+    elif user_type == 'Corporate':
+        prefix = 'CORP'
+    else:  # Individual
+        prefix = 'USER'
+    
+    # Find the highest existing number for this prefix
+    all_users = user_dao.get_all()
+    max_num = 0
+    for user in all_users:
+        if user.renter_id.startswith(prefix):
+            try:
+                num = int(user.renter_id[len(prefix):])
+                max_num = max(max_num, num)
+            except ValueError:
+                continue
+    
+    # Generate new ID with next number
+    new_num = max_num + 1
+    return f"{prefix}{new_num:03d}"
+
+
 # Decorators for authentication
 def login_required(f):
     """Decorator to require login."""
@@ -156,6 +183,11 @@ def login():
         user = auth_service.authenticate(username, password)
         
         if user:
+            # Check if user account is active
+            if not user.active:
+                flash('Your account has been deactivated. Please contact administrator.', 'danger')
+                return render_template('login.html')
+            
             session['user_id'] = user.renter_id
             session['username'] = user.username
             session['user_type'] = user.kind
@@ -216,12 +248,8 @@ def register():
                 flash('Username already exists. Please choose another one.', 'danger')
                 return render_template('register.html')
             
-            # Generate unique user ID
-            import random
-            import string
-            renter_id = 'USER' + ''.join(random.choices(string.digits, k=6))
-            while user_dao.get_by_id(renter_id):
-                renter_id = 'USER' + ''.join(random.choices(string.digits, k=6))
+            # Generate unique user ID for Individual user
+            renter_id = generate_user_id('Individual')
             
             # Create Individual user by default
             user = user_management_service.create_user(
@@ -538,17 +566,19 @@ def staff_add_user():
     if request.method == 'POST':
         try:
             user_type = request.form.get('user_type')
-            renter_id = request.form.get('renter_id')
             name = request.form.get('name')
             contact_info = request.form.get('contact_info')
             username = request.form.get('username')
             password = request.form.get('password')
             
+            # Auto-generate ID based on user type
+            renter_id = generate_user_id(user_type)
+            
             user_management_service.create_user(
                 user_type, renter_id, name, contact_info, username, password
             )
             
-            flash(f'User {name} added successfully!', 'success')
+            flash(f'User {name} added successfully with ID: {renter_id}', 'success')
             return redirect(url_for('staff_users'))
         
         except ValueError as e:
@@ -631,21 +661,47 @@ def staff_edit_user(user_id):
 @app.route('/staff/users/delete/<user_id>', methods=['POST'])
 @staff_required
 def staff_delete_user(user_id):
-    """Staff: Delete user."""
+    """Staff: Deactivate user (soft delete)."""
     try:
-        # Prevent deleting yourself
+        # Prevent deactivating yourself
         if user_id == session['user_id']:
-            flash('You cannot delete your own account!', 'danger')
+            flash('You cannot deactivate your own account!', 'danger')
             return redirect(url_for('staff_users'))
         
-        success = user_management_service.delete_user(user_id)
-        
-        if success:
-            flash('User deleted successfully!', 'success')
+        # Get the user
+        user = user_dao.get_by_id(user_id)
+        if user:
+            # Mark user as inactive
+            user.active = False
+            user_dao.update(user)
+            user_dao.save()
+            flash(f'User {user.name} has been deactivated successfully!', 'success')
         else:
             flash('User not found.', 'warning')
     
-    except ValueError as e:
+    except Exception as e:
+        flash(str(e), 'danger')
+    
+    return redirect(url_for('staff_users'))
+
+
+@app.route('/staff/users/activate/<user_id>', methods=['POST'])
+@staff_required
+def staff_activate_user(user_id):
+    """Staff: Activate user (reactivate deactivated account)."""
+    try:
+        # Get the user
+        user = user_dao.get_by_id(user_id)
+        if user:
+            # Mark user as active
+            user.active = True
+            user_dao.update(user)
+            user_dao.save()
+            flash(f'User {user.name} has been activated successfully!', 'success')
+        else:
+            flash('User not found.', 'warning')
+    
+    except Exception as e:
         flash(str(e), 'danger')
     
     return redirect(url_for('staff_users'))
