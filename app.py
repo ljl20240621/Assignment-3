@@ -28,7 +28,42 @@ app.secret_key = 'your-secret-key-here-change-in-production'
 from datetime import datetime
 @app.context_processor
 def inject_now():
-    return {'now': datetime.now}
+    return {'now': datetime.now, 'min': min, 'max': max}
+
+# Add custom Jinja2 filter for pagination
+@app.template_filter('reject_page')
+def reject_page(args_dict):
+    """Remove 'page' parameter from request args."""
+    result = dict(args_dict)
+    result.pop('page', None)
+    return result
+
+# Pagination helper function
+def paginate(items, page, per_page=10):
+    """
+    Paginate a list of items.
+    Returns a dict with items for current page and pagination info.
+    """
+    total = len(items)
+    total_pages = (total + per_page - 1) // per_page  # Ceiling division
+    
+    # Ensure page is within valid range
+    page = max(1, min(page, total_pages if total_pages > 0 else 1))
+    
+    start = (page - 1) * per_page
+    end = start + per_page
+    
+    return {
+        'items': items[start:end],
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'total_pages': total_pages,
+        'has_prev': page > 1,
+        'has_next': page < total_pages,
+        'prev_page': page - 1 if page > 1 else None,
+        'next_page': page + 1 if page < total_pages else None
+    }
 
 # Data file paths
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -228,6 +263,7 @@ def vehicles():
     vehicle_type = request.args.get('type')
     make = request.args.get('make')
     price_range = request.args.get('price_range')
+    page = request.args.get('page', 1, type=int)
     
     min_price = None
     max_price = None
@@ -241,12 +277,15 @@ def vehicles():
         min_price = 101
     
     # Filter vehicles
-    vehicles = rental_service.filter_vehicles(
+    all_filtered_vehicles = rental_service.filter_vehicles(
         vehicle_type=vehicle_type,
         make=make,
         min_price=min_price,
         max_price=max_price
     )
+    
+    # Paginate results (9 cards per page for better grid layout: 3 columns x 3 rows)
+    pagination = paginate(all_filtered_vehicles, page, per_page=9)
     
     # Get all makes for filter dropdown
     all_vehicles = vehicle_dao.get_all()
@@ -255,7 +294,8 @@ def vehicles():
     user = user_dao.get_by_id(session['user_id'])
     
     return render_template('vehicles.html',
-                         vehicles=vehicles,
+                         vehicles=pagination['items'],
+                         pagination=pagination,
                          all_makes=all_makes,
                          user=user,
                          current_type=vehicle_type,
@@ -383,10 +423,17 @@ def return_vehicle(vehicle_id):
 @customer_required
 def my_rentals():
     """View rental history."""
+    page = request.args.get('page', 1, type=int)
     user = user_dao.get_by_id(session['user_id'])
     rental_history = list(user.rental_history)
     
-    return render_template('my_rentals.html', user=user, rental_history=rental_history)
+    # Paginate results
+    pagination = paginate(rental_history, page, per_page=10)
+    
+    return render_template('my_rentals.html', 
+                         user=user, 
+                         rental_history=pagination['items'],
+                         pagination=pagination)
 
 
 # Staff routes
@@ -394,10 +441,17 @@ def my_rentals():
 @staff_required
 def staff_users():
     """Staff: User management page."""
-    users = user_dao.get_all()
+    page = request.args.get('page', 1, type=int)
+    all_users = user_dao.get_all()
     user = user_dao.get_by_id(session['user_id'])
     
-    return render_template('staff_users.html', users=users, user=user)
+    # Paginate results
+    pagination = paginate(all_users, page, per_page=10)
+    
+    return render_template('staff_users.html', 
+                         users=pagination['items'], 
+                         pagination=pagination,
+                         user=user)
 
 
 @app.route('/staff/users/add', methods=['GET', 'POST'])
@@ -524,10 +578,17 @@ def staff_delete_user(user_id):
 @staff_required
 def staff_vehicles():
     """Staff: Vehicle management page."""
-    vehicles = vehicle_dao.get_all()
+    page = request.args.get('page', 1, type=int)
+    all_vehicles = vehicle_dao.get_all()
     user = user_dao.get_by_id(session['user_id'])
     
-    return render_template('staff_vehicles.html', vehicles=vehicles, user=user)
+    # Paginate results
+    pagination = paginate(all_vehicles, page, per_page=10)
+    
+    return render_template('staff_vehicles.html', 
+                         vehicles=pagination['items'],
+                         pagination=pagination,
+                         user=user)
 
 
 @app.route('/staff/vehicles/add', methods=['GET', 'POST'])
@@ -587,6 +648,7 @@ def staff_delete_vehicle(vehicle_id):
 @staff_required
 def staff_rentals():
     """Staff: View all rentals."""
+    page = request.args.get('page', 1, type=int)
     all_rentals = rental_service.get_all_rental_records()
     user = user_dao.get_by_id(session['user_id'])
     
@@ -601,8 +663,12 @@ def staff_rentals():
             'vehicle': vehicle
         })
     
+    # Paginate results
+    pagination = paginate(enriched_rentals, page, per_page=10)
+    
     return render_template('staff_rentals.html', 
-                         rentals=enriched_rentals, 
+                         rentals=pagination['items'],
+                         pagination=pagination,
                          user=user)
 
 
@@ -626,11 +692,16 @@ def staff_analytics():
 @staff_required
 def staff_activities():
     """Staff: User activity logs."""
-    activities = analytics_service.get_user_activity_logs(50)
+    page = request.args.get('page', 1, type=int)
+    all_activities = analytics_service.get_user_activity_logs(1000)  # Get more records for pagination
     user = user_dao.get_by_id(session['user_id'])
     
+    # Paginate results
+    pagination = paginate(all_activities, page, per_page=10)
+    
     return render_template('staff_activities.html',
-                         activities=activities,
+                         activities=pagination['items'],
+                         pagination=pagination,
                          user=user)
 
 
