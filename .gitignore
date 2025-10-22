@@ -4,30 +4,18 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
 # Virtual Environment
 venv/
-ENV/
 env/
+ENV/
 
-# Data files
-data/
-*.pkl
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
 
 # IDE
 .vscode/
@@ -36,21 +24,10 @@ data/
 *.swo
 *~
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
 # OS
 .DS_Store
 Thumbs.db
 
-# Logs
+# Application specific
+*.pkl.bak
 *.log
-
-# Static files (images - but keep the directory)
-static/images/*.jpg
-static/images/*.png
-!static/images/README.md
-!static/images/generate_placeholders.py

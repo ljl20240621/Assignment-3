@@ -48,16 +48,49 @@
                 <hr>
                 
                 <form method="POST" action="{{ url_for('customer.rent_vehicle', vehicle_id=vehicle.vehicle_id) }}">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="start_datetime" class="form-label">Start Date & Time</label>
-                            <input type="datetime-local" class="form-control" id="start_datetime" name="start_datetime" 
-                                   min="{{ now().strftime('%Y-%m-%dT%H:%M') }}" required>
+                    <!-- Start Date & Time -->
+                    <div class="card mb-3 border-success">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-calendar-check"></i> Pickup Date & Time</h6>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="end_datetime" class="form-label">End Date & Time</label>
-                            <input type="datetime-local" class="form-control" id="end_datetime" name="end_datetime" 
-                                   min="{{ now().strftime('%Y-%m-%dT%H:%M') }}" required>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <label for="start_date" class="form-label">Pickup Date</label>
+                                    <input type="date" class="form-control form-control-lg" id="start_date" name="start_date" 
+                                           min="{{ now().strftime('%Y-%m-%d') }}" required>
+                                    <small class="text-muted">Select the date you want to pick up the vehicle</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="start_time" class="form-label">Pickup Time</label>
+                                    <input type="time" class="form-control form-control-lg" id="start_time" name="start_time" 
+                                           value="09:00" required>
+                                    <small class="text-muted">Select the time you want to pick up the vehicle</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- End Date & Time -->
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-calendar-x"></i> Return Date & Time</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <label for="end_date" class="form-label">Return Date</label>
+                                    <input type="date" class="form-control form-control-lg" id="end_date" name="end_date" 
+                                           min="{{ now().strftime('%Y-%m-%d') }}" required>
+                                    <small class="text-muted">Select the date you plan to return the vehicle</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="end_time" class="form-label">Return Time</label>
+                                    <input type="time" class="form-control form-control-lg" id="end_time" name="end_time" 
+                                           value="09:00" required>
+                                    <small class="text-muted">Select the time you plan to return the vehicle</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -91,127 +124,96 @@
     // Parse booked date ranges
     const bookedRanges = {{ booked_ranges|safe }};
     
-    // Function to check if a date is within any booked range
-    function isDateBooked(checkDate) {
-        const date = new Date(checkDate);
-        for (let range of bookedRanges) {
-            const startDate = new Date(range.start);
-            const endDate = new Date(range.end);
-            if (date >= startDate && date <= endDate) {
-                return true;
-            }
-        }
-        return false;
+    // Function to combine date and time inputs
+    function combineDateTime(dateInput, timeInput) {
+        if (!dateInput || !timeInput) return null;
+        return new Date(dateInput + 'T' + timeInput);
     }
     
     // Function to check if date range overlaps with any booked range
-    function doesRangeOverlap(startDate, endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
+    function doesRangeOverlap(startDateTime, endDateTime) {
         for (let range of bookedRanges) {
             const bookedStart = new Date(range.start);
             const bookedEnd = new Date(range.end);
             
             // Check for any overlap
-            if (start <= bookedEnd && end >= bookedStart) {
+            if (startDateTime <= bookedEnd && endDateTime >= bookedStart) {
                 return range;
             }
         }
         return null;
     }
     
-    // Function to get all dates in a range that are booked
-    function getBookedDatesInRange(startDate, endDate) {
-        const dates = [];
-        let current = new Date(startDate);
-        const end = new Date(endDate);
+    // Validation function
+    function validateDateTimeInputs() {
+        const startDate = document.getElementById('start_date').value;
+        const startTime = document.getElementById('start_time').value;
+        const endDate = document.getElementById('end_date').value;
+        const endTime = document.getElementById('end_time').value;
         
-        while (current <= end) {
-            if (isDateBooked(current.toISOString().split('T')[0])) {
-                dates.push(new Date(current).toISOString().split('T')[0]);
-            }
-            current.setDate(current.getDate() + 1);
+        if (!startDate || !startTime || !endDate || !endTime) {
+            return true; // Let browser's required attribute handle this
         }
-        return dates;
-    }
-    
-    // Add datetime validation
-    document.getElementById('end_datetime').addEventListener('change', function() {
-        const startDatetime = document.getElementById('start_datetime').value;
-        const endDatetime = this.value;
         
-        if (startDatetime && endDatetime && new Date(endDatetime) <= new Date(startDatetime)) {
-            alert('End date & time must be after start date & time!');
-            this.value = '';
-            return;
+        const startDateTime = combineDateTime(startDate, startTime);
+        const endDateTime = combineDateTime(endDate, endTime);
+        
+        // Check if end is after start
+        if (endDateTime <= startDateTime) {
+            alert('Return date & time must be after pickup date & time!');
+            return false;
+        }
+        
+        // Calculate minimum duration (at least 1 hour)
+        const diffMs = endDateTime - startDateTime;
+        const diffHours = diffMs / (1000 * 60 * 60);
+        if (diffHours < 1) {
+            alert('Rental period must be at least 1 hour!');
+            return false;
         }
         
         // Check for overlap with booked ranges
-        if (startDatetime && endDatetime) {
-            const startDate = startDatetime.split('T')[0];
-            const endDate = endDatetime.split('T')[0];
-            const overlap = doesRangeOverlap(startDate, endDate);
-            if (overlap) {
-                alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
-            }
+        const overlap = doesRangeOverlap(startDateTime, endDateTime);
+        if (overlap) {
+            alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
+            return false;
         }
+        
+        return true;
+    }
+    
+    // Add validation on date/time change
+    document.getElementById('start_date').addEventListener('change', function() {
+        const endDateInput = document.getElementById('end_date');
+        endDateInput.min = this.value;
+        validateDateTimeInputs();
     });
     
-    document.getElementById('start_datetime').addEventListener('change', function() {
-        const endDatetimeInput = document.getElementById('end_datetime');
-        const startDatetime = this.value;
-        endDatetimeInput.min = this.value;
-        
-        // Check if start date itself is booked
-        const startDate = startDatetime.split('T')[0];
-        if (isDateBooked(startDate)) {
-            alert('This date is already booked. Please choose a different date.');
-        }
-        
-        // If end datetime is already set, validate the range
-        if (endDatetimeInput.value) {
-            const endDate = endDatetimeInput.value.split('T')[0];
-            const overlap = doesRangeOverlap(startDate, endDate);
-            if (overlap) {
-                alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
-            }
-        }
-    });
+    document.getElementById('end_date').addEventListener('change', validateDateTimeInputs);
+    document.getElementById('start_time').addEventListener('change', validateDateTimeInputs);
+    document.getElementById('end_time').addEventListener('change', validateDateTimeInputs);
     
     // Form submission validation
     document.querySelector('form').addEventListener('submit', function(e) {
-        const startDatetime = document.getElementById('start_datetime').value;
-        const endDatetime = document.getElementById('end_datetime').value;
-        
-        if (startDatetime && endDatetime) {
-            if (new Date(endDatetime) <= new Date(startDatetime)) {
-                e.preventDefault();
-                alert('End date & time must be after start date & time!');
-                return false;
-            }
-            
-            // Calculate minimum duration (at least 1 hour)
-            const diffMs = new Date(endDatetime) - new Date(startDatetime);
-            const diffHours = diffMs / (1000 * 60 * 60);
-            if (diffHours < 1) {
-                e.preventDefault();
-                alert('Rental period must be at least 1 hour!');
-                return false;
-            }
+        if (!validateDateTimeInputs()) {
+            e.preventDefault();
+            return false;
         }
     });
     
     // Display booked dates info if any
     if (bookedRanges.length > 0) {
         const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-warning mt-3';
-        alertDiv.innerHTML = '<h6><i class="bi bi-exclamation-triangle"></i> Currently Booked Dates:</h6><ul class="mb-0">';
+        alertDiv.className = 'alert alert-warning';
+        alertDiv.innerHTML = '<h6><i class="bi bi-exclamation-triangle"></i> Currently Booked Periods:</h6><ul class="mb-0">';
         bookedRanges.forEach(range => {
-            alertDiv.innerHTML += `<li>From ${range.start} to ${range.end}</li>`;
+            const startDate = new Date(range.start);
+            const endDate = new Date(range.end);
+            const formatOptions = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            alertDiv.innerHTML += `<li>From ${startDate.toLocaleDateString('en-US', formatOptions)} to ${endDate.toLocaleDateString('en-US', formatOptions)}</li>`;
         });
         alertDiv.innerHTML += '</ul>';
-        document.querySelector('.alert.alert-info').parentNode.insertBefore(alertDiv, document.querySelector('.alert.alert-info').nextSibling);
+        document.querySelector('.alert.alert-info').parentNode.insertBefore(alertDiv, document.querySelector('.alert.alert-info'));
     }
 </script>
 {% endblock %}

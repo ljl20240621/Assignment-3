@@ -197,11 +197,16 @@ def rent_vehicle(vehicle_id):
             })
     
     if request.method == 'POST':
-        start_datetime = request.form.get('start_datetime')
-        end_datetime = request.form.get('end_datetime')
+        start_date = request.form.get('start_date')
+        start_time = request.form.get('start_time')
+        end_date = request.form.get('end_date')
+        end_time = request.form.get('end_time')
         
         try:
-            # Convert datetime from YYYY-MM-DDTHH:MM to DD-MM-YYYY HH:MM
+            # Combine date and time, then convert to DD-MM-YYYY HH:MM format
+            start_datetime = f"{start_date}T{start_time}"
+            end_datetime = f"{end_date}T{end_time}"
+            
             start_dt = datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M')
             end_dt = datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M')
             start_datetime_formatted = start_dt.strftime('%d-%m-%Y %H:%M')
