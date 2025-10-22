@@ -117,6 +117,27 @@ main {
     margin-bottom: 0.5rem;
 }
 
+/* Date and Time Input Improvements */
+input[type="date"], 
+input[type="time"], 
+input[type="datetime-local"] {
+    cursor: pointer;
+}
+
+input[type="date"]:hover,
+input[type="time"]:hover,
+input[type="datetime-local"]:hover {
+    border-color: var(--primary-color);
+}
+
+/* Enhance picker indicator visibility */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    padding: 5px;
+}
+
 /* Alerts */
 .alert {
     border-radius: 8px;

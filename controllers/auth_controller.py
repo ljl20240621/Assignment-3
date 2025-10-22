@@ -145,10 +145,17 @@ def dashboard():
     else:
         # Customer dashboard
         rental_history = list(user.rental_history)
-        active_rentals = user.get_active_rentals()
+        all_active_rentals = user.get_active_rentals()
+        
+        # Limit active rentals to first 10 for dashboard
+        active_rentals_display = all_active_rentals[:10]
+        total_active = len(all_active_rentals)
+        has_more_active = total_active > 10
         
         return render_template('customer_dashboard.html',
                              user=user,
                              rental_history=rental_history,
-                             active_rentals=active_rentals)
+                             active_rentals=active_rentals_display,
+                             total_active=total_active,
+                             has_more_active=has_more_active)
 

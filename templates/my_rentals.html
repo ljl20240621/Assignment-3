@@ -11,29 +11,71 @@
     </div>
 </div>
 
-<!-- Search Bar -->
+<!-- Search and Filter Bar -->
 <div class="row mb-3">
     <div class="col-12">
-        <form method="GET" action="{{ url_for('customer.my_rentals') }}">
-            <div class="input-group input-group-lg">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" class="form-control" name="search" id="search" 
-                       placeholder="Search by vehicle ID, make, or model..." 
-                       value="{{ current_search }}">
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-search"></i> Search
-                </button>
-                {% if current_search %}
-                <a href="{{ url_for('customer.my_rentals') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Clear
-                </a>
-                {% endif %}
+        <form method="GET" action="{{ url_for('customer.my_rentals') }}" id="filterForm">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" name="search" id="search" 
+                               placeholder="Search by vehicle ID, make, or model..." 
+                               value="{{ current_search }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select form-select-lg" name="status" id="status">
+                        <option value="">All Status</option>
+                        <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="returned" {% if current_status == 'returned' %}selected{% endif %}>Returned</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-search"></i> Apply
+                        </button>
+                        {% if current_search or current_status %}
+                        <a href="{{ url_for('customer.my_rentals') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> Reset
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
 {% if rental_history %}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6>Total Rentals</h6>
+                <h3>{{ rental_history|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6>Total Spent</h6>
+                <h3>${{ rental_history | sum(attribute='total_cost') | round(2) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6>Active Rentals</h6>
+                <h3>{{ rental_history | selectattr('returned', 'equalto', False) | list | length }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -43,6 +85,8 @@
                         <thead>
                             <tr>
                                 <th>Vehicle ID</th>
+                                <th>Make</th>
+                                <th>Model</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
                                 <th>Duration</th>
@@ -54,8 +98,11 @@
                         </thead>
                         <tbody>
                             {% for rental in rental_history | reverse %}
+                            {% set vehicle = vehicles_dict.get(rental.vehicle_id) %}
                             <tr>
                                 <td><code>{{ rental.vehicle_id }}</code></td>
+                                <td>{{ vehicle.make if vehicle else 'N/A' }}</td>
+                                <td>{{ vehicle.model if vehicle else 'N/A' }}</td>
                                 <td>{{ rental.period.start_date }}</td>
                                 <td>{{ rental.period.end_date }}</td>
                                 <td>{{ rental.period.calculate_duration() }} day(s)</td>
@@ -95,39 +142,11 @@
 <!-- Pagination -->
 {% include 'pagination.html' %}
 
-<div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h6>Total Rentals</h6>
-                <h3>{{ rental_history|length }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h6>Total Spent</h6>
-                <h3>${{ rental_history | sum(attribute='total_cost') | round(2) }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h6>Active Rentals</h6>
-                <h3>{{ rental_history | selectattr('returned', 'equalto', False) | list | length }}</h3>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% else %}
 <div class="row">
     <div class="col-12">
         <div class="alert alert-info alert-static">
             <h5><i class="bi bi-info-circle"></i> No Rental History</h5>
-            <p class="mb-0">You haven't rented any vehicles yet. <a href="{{ url_for('customer.vehicles') }}">Browse available vehicles</a> to get started!</p>
         </div>
     </div>
 </div>

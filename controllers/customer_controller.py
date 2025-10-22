@@ -90,21 +90,38 @@ def vehicles():
         all_filtered_vehicles = [v for v in all_filtered_vehicles if v.get_active_rentals()]
     
     # Filter by availability period
-    if start_date and end_date:
+    if start_date or end_date:
         try:
-            start_dt = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
-            end_dt = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
-            
-            # Convert to DD-MM-YYYY HH:MM format for RentalPeriod
-            start_formatted = start_dt.strftime('%d-%m-%Y %H:%M')
-            end_formatted = end_dt.strftime('%d-%m-%Y %H:%M')
-            
-            # Create a rental period to check availability
             from models.services.rental_period import RentalPeriod
-            check_period = RentalPeriod(start_formatted, end_formatted)
+            from datetime import timedelta
             
-            # Filter to only vehicles available during this period
-            all_filtered_vehicles = [v for v in all_filtered_vehicles if v.is_available(check_period)]
+            # If only one date is provided, use reasonable defaults
+            if start_date and not end_date:
+                # If only start date: check from start to 30 days later
+                start_dt = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+                end_dt = start_dt + timedelta(days=30)
+            elif end_date and not start_date:
+                # If only end date: check from now to end date
+                start_dt = datetime.now()
+                end_dt = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+            else:
+                # Both dates provided
+                start_dt = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+                end_dt = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+            
+            # Validate date range
+            if end_dt <= start_dt:
+                flash('End date must be after start date.', 'warning')
+            else:
+                # Convert to DD-MM-YYYY HH:MM format for RentalPeriod
+                start_formatted = start_dt.strftime('%d-%m-%Y %H:%M')
+                end_formatted = end_dt.strftime('%d-%m-%Y %H:%M')
+                
+                # Create a rental period to check availability
+                check_period = RentalPeriod(start_formatted, end_formatted)
+                
+                # Filter to only vehicles available during this period
+                all_filtered_vehicles = [v for v in all_filtered_vehicles if v.is_available(check_period)]
         except (ValueError, Exception) as e:
             flash(f'Invalid date range: {str(e)}', 'warning')
     
@@ -328,6 +345,11 @@ def return_vehicle(vehicle_id):
                 flash('Return date & time cannot be before the rental start!', 'danger')
                 return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental)
             
+            # Check if already returned (idempotent check)
+            if active_rental.returned:
+                flash('This vehicle has already been returned.', 'info')
+                return redirect(url_for('customer.my_rentals'))
+            
             # Return the vehicle
             success = rental_service.return_vehicle(vehicle_id, session['user_id'])
             
@@ -335,7 +357,19 @@ def return_vehicle(vehicle_id):
                 flash('Vehicle returned successfully!', 'success')
                 return redirect(url_for('customer.my_rentals'))
             else:
-                flash('Failed to return vehicle. Please try again.', 'danger')
+                # Check if it was already returned during the process
+                user = user_dao.get_by_id(session['user_id'])
+                updated_rental = None
+                for rental in user.rental_history:
+                    if rental.vehicle_id == vehicle_id and not rental.returned:
+                        updated_rental = rental
+                        break
+                
+                if updated_rental and updated_rental.returned:
+                    flash('Vehicle was already returned.', 'info')
+                    return redirect(url_for('customer.my_rentals'))
+                else:
+                    flash('Failed to return vehicle. Please try again.', 'danger')
         
         except ValueError as e:
             flash(str(e), 'danger')
@@ -352,8 +386,16 @@ def my_rentals():
     
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '').strip()
+    status_filter = request.args.get('status', '').strip()
     user = user_dao.get_by_id(session['user_id'])
     rental_history = list(user.rental_history)
+    
+    # Status filter
+    if status_filter:
+        if status_filter == 'active':
+            rental_history = [r for r in rental_history if not r.returned]
+        elif status_filter == 'returned':
+            rental_history = [r for r in rental_history if r.returned]
     
     # Search filter
     if search:
@@ -373,11 +415,21 @@ def my_rentals():
     # Paginate results
     pagination = paginate(rental_history, page, per_page=10)
     
+    # Create a dictionary of vehicles for easy lookup in template
+    vehicles_dict = {}
+    for rental in pagination['items']:
+        if rental.vehicle_id not in vehicles_dict:
+            vehicle = vehicle_dao.get_by_id(rental.vehicle_id)
+            if vehicle:
+                vehicles_dict[rental.vehicle_id] = vehicle
+    
     return render_template('my_rentals.html', 
                          user=user, 
                          rental_history=pagination['items'],
                          pagination=pagination,
-                         current_search=search)
+                         current_search=search,
+                         current_status=status_filter,
+                         vehicles_dict=vehicles_dict)
 
 
 @customer_bp.route('/invoice')

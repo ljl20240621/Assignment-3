@@ -76,22 +76,39 @@
                     <div class="row">
                         <div class="col-md-5">
                             <label for="start_date" class="form-label">
-                                <i class="bi bi-calendar-check"></i> Check Availability (Optional)
+                                <i class="bi bi-calendar-check"></i> Rental Start (Optional)
                             </label>
-                            <input type="datetime-local" class="form-control" name="start_date" id="start_date" 
-                                   value="{{ current_start_date }}" min="{{ now().strftime('%Y-%m-%dT%H:%M') }}">
+                            <div class="input-group">
+                                <input type="datetime-local" class="form-control" name="start_date" id="start_date" 
+                                       value="{{ current_start_date }}" min="{{ now().strftime('%Y-%m-%dT%H:%M') }}">
+                                <button type="button" class="btn btn-outline-secondary clear-datetime" data-target="start_date" 
+                                        style="display: {% if current_start_date %}block{% else %}none{% endif %};">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-5">
                             <label for="end_date" class="form-label">
-                                <i class="bi bi-calendar-x"></i> To
+                                <i class="bi bi-calendar-x"></i> Rental End (Optional)
                             </label>
-                            <input type="datetime-local" class="form-control" name="end_date" id="end_date" 
-                                   value="{{ current_end_date }}" min="{{ now().strftime('%Y-%m-%dT%H:%M') }}">
+                            <div class="input-group">
+                                <input type="datetime-local" class="form-control" name="end_date" id="end_date" 
+                                       value="{{ current_end_date }}" min="{{ now().strftime('%Y-%m-%dT%H:%M') }}">
+                                <button type="button" class="btn btn-outline-secondary clear-datetime" data-target="end_date"
+                                        style="display: {% if current_end_date %}block{% else %}none{% endif %};">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search"></i> Apply
-                            </button>
+                            <div class="d-grid gap-2 w-100">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Apply
+                                </button>
+                                <a href="{{ url_for('customer.vehicles') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-clockwise"></i> Reset
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -186,5 +203,45 @@
         object-fit: cover;
     }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle clear datetime buttons
+        const clearButtons = document.querySelectorAll('.clear-datetime');
+        clearButtons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                input.value = '';
+                this.style.display = 'none';
+            });
+        });
+        
+        // Show/hide clear buttons based on input value
+        const datetimeInputs = document.querySelectorAll('#start_date, #end_date');
+        datetimeInputs.forEach(function(input) {
+            input.addEventListener('input', function() {
+                const clearBtn = this.nextElementSibling;
+                if (this.value) {
+                    clearBtn.style.display = 'block';
+                } else {
+                    clearBtn.style.display = 'none';
+                }
+            });
+            
+            // Also handle change event (for date/time pickers)
+            input.addEventListener('change', function() {
+                const clearBtn = this.nextElementSibling;
+                if (this.value) {
+                    clearBtn.style.display = 'block';
+                } else {
+                    clearBtn.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}
 

@@ -73,8 +73,8 @@ class RentalService:
     
     def return_vehicle(self, vehicle_id: str, renter_id: str, period: Optional[RentalPeriod] = None) -> bool:
         """
-        Return a rented vehicle.
-        Returns True if successful, False otherwise.
+        Return a rented vehicle (idempotent operation).
+        Returns True if successful or already returned, False otherwise.
         """
         vehicle = self.vehicle_dao.get_by_id(vehicle_id)
         if not vehicle:
@@ -84,11 +84,35 @@ class RentalService:
         if not user:
             raise ValueError(f"User with ID '{renter_id}' not found.")
         
+        # Check if already returned in user's history (idempotent check)
+        already_returned = False
+        for record in user.rental_history:
+            if (record.vehicle_id == vehicle_id and 
+                record.renter_id == renter_id):
+                if period is None or (record.period.start_date == period.start_date and 
+                                     record.period.end_date == period.end_date):
+                    if record.returned:
+                        already_returned = True
+                    break
+        
+        if already_returned:
+            return True  # Already returned, consider it successful
+        
         # Mark as returned in vehicle's history
         success = vehicle.return_rental(renter_id, period)
         
         if success:
-            # Update the shared rental record
+            # Update the user's rental history
+            for record in user.rental_history:
+                if (record.vehicle_id == vehicle_id and 
+                    record.renter_id == renter_id and 
+                    not record.returned):
+                    if period is None or (record.period.start_date == period.start_date and 
+                                         record.period.end_date == period.end_date):
+                        record.returned = True
+                        break
+            
+            # Update the shared rental record in rental_dao
             for record in self.rental_dao.get_all():
                 if (record.vehicle_id == vehicle_id and 
                     record.renter_id == renter_id and 
@@ -98,7 +122,7 @@ class RentalService:
                         record.returned = True
                         break
             
-            # Save changes
+            # Save changes to all data sources
             self.vehicle_dao.save()
             self.user_dao.save()
             self.rental_dao.save()

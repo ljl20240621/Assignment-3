@@ -121,6 +121,26 @@
         });
     </script>
     
+    <!-- Make date/time inputs fully clickable -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateTimeInputs = document.querySelectorAll('input[type="date"], input[type="time"], input[type="datetime-local"]');
+            dateTimeInputs.forEach(function(input) {
+                input.addEventListener('click', function(e) {
+                    try {
+                        // Modern browsers support showPicker()
+                        if (this.showPicker) {
+                            this.showPicker();
+                        }
+                    } catch (err) {
+                        // Fallback: just focus the input
+                        this.focus();
+                    }
+                });
+            });
+        });
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
