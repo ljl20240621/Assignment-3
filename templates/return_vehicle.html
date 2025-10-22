@@ -5,9 +5,15 @@
 {% block content %}
 <div class="row mb-3">
     <div class="col-12">
+        {% if return_to == 'auth.dashboard' %}
+        <a href="{{ url_for('auth.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+        {% else %}
         <a href="{{ url_for('customer.my_rentals') }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to My Rentals
         </a>
+        {% endif %}
     </div>
 </div>
 
@@ -45,7 +51,7 @@
                 {% if not rental.returned %}
                 <hr>
                 
-                <form method="POST" action="{{ url_for('customer.return_vehicle', vehicle_id=vehicle.vehicle_id) }}" id="returnForm">
+                <form method="POST" action="{{ url_for('customer.return_vehicle', vehicle_id=vehicle.vehicle_id, source=request.args.get('source', 'my-rentals')) }}" id="returnForm">
                     <div class="mb-4">
                         <label class="form-label">
                             <strong>Actual Return Date & Time</strong>
@@ -80,9 +86,15 @@
                         <button type="button" class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#confirmModal">
                             <i class="bi bi-check-circle"></i> Proceed to Return
                         </button>
+                        {% if return_to == 'auth.dashboard' %}
+                        <a href="{{ url_for('auth.dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        {% else %}
                         <a href="{{ url_for('customer.my_rentals') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle"></i> Cancel
                         </a>
+                        {% endif %}
                     </div>
                 </form>
                 {% else %}

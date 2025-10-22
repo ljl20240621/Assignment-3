@@ -147,6 +147,11 @@ def dashboard():
         rental_history = list(user.rental_history)
         all_active_rentals = user.get_active_rentals()
         
+        # Add vehicle information to each rental
+        vehicle_dao = current_app.config['VEHICLE_DAO']
+        for rental in all_active_rentals:
+            rental.vehicle = vehicle_dao.get_by_id(rental.vehicle_id)
+        
         # Limit active rentals to first 10 for dashboard
         active_rentals_display = all_active_rentals[:10]
         total_active = len(all_active_rentals)

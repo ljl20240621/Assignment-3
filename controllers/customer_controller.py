@@ -313,12 +313,21 @@ def return_vehicle(vehicle_id):
     user_dao = current_app.config['USER_DAO']
     rental_service = current_app.config['RENTAL_SERVICE']
     
+    # Get source parameter to determine return destination
+    source = request.args.get('source', 'my-rentals')
+    return_to = 'customer.my_rentals'  # Default fallback
+    
+    if source == 'dashboard':
+        return_to = 'auth.dashboard'
+    elif source == 'my-rentals':
+        return_to = 'customer.my_rentals'
+    
     vehicle = vehicle_dao.get_by_id(vehicle_id)
     user = user_dao.get_by_id(session['user_id'])
     
     if not vehicle:
         flash('Vehicle not found.', 'danger')
-        return redirect(url_for('customer.my_rentals'))
+        return redirect(url_for(return_to))
     
     # Find active rental for this vehicle and user
     active_rental = None
@@ -329,7 +338,7 @@ def return_vehicle(vehicle_id):
     
     if not active_rental:
         flash('No active rental found for this vehicle.', 'warning')
-        return redirect(url_for('customer.my_rentals'))
+        return redirect(url_for(return_to))
     
     if request.method == 'POST':
         return_datetime = request.form.get('return_datetime')
@@ -343,19 +352,19 @@ def return_vehicle(vehicle_id):
             start_dt = datetime.strptime(active_rental.period.start_date, '%d-%m-%Y %H:%M')
             if return_dt < start_dt:
                 flash('Return date & time cannot be before the rental start!', 'danger')
-                return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental)
+                return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental, return_to=return_to)
             
             # Check if already returned (idempotent check)
             if active_rental.returned:
                 flash('This vehicle has already been returned.', 'info')
-                return redirect(url_for('customer.my_rentals'))
+                return redirect(url_for(return_to))
             
             # Return the vehicle
             success = rental_service.return_vehicle(vehicle_id, session['user_id'])
             
             if success:
                 flash('Vehicle returned successfully!', 'success')
-                return redirect(url_for('customer.my_rentals'))
+                return redirect(url_for(return_to))
             else:
                 # Check if it was already returned during the process
                 user = user_dao.get_by_id(session['user_id'])
@@ -367,14 +376,14 @@ def return_vehicle(vehicle_id):
                 
                 if updated_rental and updated_rental.returned:
                     flash('Vehicle was already returned.', 'info')
-                    return redirect(url_for('customer.my_rentals'))
+                    return redirect(url_for(return_to))
                 else:
                     flash('Failed to return vehicle. Please try again.', 'danger')
         
         except ValueError as e:
             flash(str(e), 'danger')
-    
-    return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental)
+    print("return_to", return_to)
+    return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental, return_to=return_to)
 
 
 @customer_bp.route('/my-rentals')

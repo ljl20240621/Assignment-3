@@ -122,7 +122,7 @@
                                 </td>
                                 <td>
                                     {% if not rental.returned %}
-                                    <a href="{{ url_for('customer.return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
+                                    <a href="{{ url_for('customer.return_vehicle', vehicle_id=rental.vehicle_id, source='my-rentals') }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-arrow-return-left"></i> Return
                                     </a>
                                     {% else %}

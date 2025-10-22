@@ -85,6 +85,8 @@
                         <thead>
                             <tr>
                                 <th>Vehicle ID</th>
+                                <th>Make</th>
+                                <th>Model</th>
                                 <th>Period</th>
                                 <th>Cost</th>
                                 <th>Invoice</th>
@@ -95,6 +97,8 @@
                             {% for rental in active_rentals %}
                             <tr>
                                 <td><code>{{ rental.vehicle_id }}</code></td>
+                                <td>{{ rental.vehicle.make if rental.vehicle else 'N/A' }}</td>
+                                <td>{{ rental.vehicle.model if rental.vehicle else 'N/A' }}</td>
                                 <td>{{ rental.period.start_date }} to {{ rental.period.end_date }}</td>
                                 <td>${{ rental.total_cost|round(2) }}</td>
                                 <td>
@@ -104,7 +108,7 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('customer.return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
+                                    <a href="{{ url_for('customer.return_vehicle', vehicle_id=rental.vehicle_id, source='dashboard') }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-arrow-return-left"></i> Return
                                     </a>
                                 </td>
