@@ -11,15 +11,31 @@
     </div>
 </div>
 
-<!-- Filters -->
+<!-- Search and Filters -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter Vehicles</h5>
+                <h5 class="mb-0"><i class="bi bi-search"></i> Search & Filter Vehicles</h5>
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ url_for('vehicles') }}">
+                    <!-- Search Bar -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" name="search" id="search" 
+                                       placeholder="Search by make, model, or vehicle ID..." 
+                                       value="{{ current_search }}">
+                                {% if current_search %}
+                                <a href="{{ url_for('vehicles') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Clear
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                     <div class="row mb-3">
                         <div class="col-md-3">
                             <label for="type" class="form-label">Vehicle Type</label>

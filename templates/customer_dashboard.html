@@ -86,6 +86,7 @@
                                 <th>Vehicle ID</th>
                                 <th>Period</th>
                                 <th>Cost</th>
+                                <th>Invoice</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -95,6 +96,12 @@
                                 <td><code>{{ rental.vehicle_id }}</code></td>
                                 <td>{{ rental.period.start_date }} to {{ rental.period.end_date }}</td>
                                 <td>${{ rental.total_cost|round(2) }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_invoice', vehicle_id=rental.vehicle_id, start_date=rental.period.start_date) }}" 
+                                       class="btn btn-sm btn-info" target="_blank">
+                                        <i class="bi bi-receipt"></i> View
+                                    </a>
+                                </td>
                                 <td>
                                     <a href="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-arrow-return-left"></i> Return
@@ -128,6 +135,7 @@
                                 <th>Period</th>
                                 <th>Cost</th>
                                 <th>Status</th>
+                                <th>Invoice</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -142,6 +150,12 @@
                                     {% else %}
                                     <span class="badge bg-primary">Active</span>
                                     {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('view_invoice', vehicle_id=rental.vehicle_id, start_date=rental.period.start_date) }}" 
+                                       class="btn btn-sm btn-info" target="_blank">
+                                        <i class="bi bi-receipt"></i> View
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}

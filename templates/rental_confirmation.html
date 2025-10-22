@@ -6,13 +6,31 @@
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0"><i class="bi bi-check-circle"></i> Rental Confirmed!</h4>
+            <div class="card-header {% if is_invoice %}bg-info{% else %}bg-success{% endif %} text-white">
+                <h4 class="mb-0">
+                    {% if is_invoice %}
+                    <i class="bi bi-receipt"></i> Rental Invoice
+                    {% else %}
+                    <i class="bi bi-check-circle"></i> Rental Confirmed!
+                    {% endif %}
+                </h4>
             </div>
             <div class="card-body">
-                <div class="alert alert-success">
-                    <h5><i class="bi bi-check-circle-fill"></i> Your rental has been successfully processed!</h5>
-                    <p class="mb-0">Please review your invoice below and save or print it for your records.</p>
+                <div class="alert {% if is_invoice %}alert-info{% else %}alert-success{% endif %}">
+                    <h5>
+                        {% if is_invoice %}
+                        <i class="bi bi-receipt-cutoff"></i> Invoice Details
+                        {% else %}
+                        <i class="bi bi-check-circle-fill"></i> Your rental has been successfully processed!
+                        {% endif %}
+                    </h5>
+                    <p class="mb-0">
+                        {% if is_invoice %}
+                        Below is your rental invoice. You can print this page for your records.
+                        {% else %}
+                        Please review your invoice below and save or print it for your records.
+                        {% endif %}
+                    </p>
                 </div>
                 
                 <hr>
@@ -124,12 +142,21 @@
                     <button onclick="window.print()" class="btn btn-primary">
                         <i class="bi bi-printer"></i> Print Invoice
                     </button>
+                    {% if is_invoice %}
+                    <a href="{{ url_for('my_rentals') }}" class="btn btn-success">
+                        <i class="bi bi-arrow-left"></i> Back to My Rentals
+                    </a>
+                    <button onclick="window.close()" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Close
+                    </button>
+                    {% else %}
                     <a href="{{ url_for('dashboard') }}" class="btn btn-success">
                         <i class="bi bi-house"></i> Return to Dashboard
                     </a>
                     <a href="{{ url_for('vehicles') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-car-front"></i> Browse More Vehicles
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

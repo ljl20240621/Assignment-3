@@ -308,6 +308,7 @@ def dashboard():
 def vehicles():
     """Vehicle listing page."""
     # Get filter parameters
+    search = request.args.get('search', '').strip()
     vehicle_type = request.args.get('type')
     make = request.args.get('make')
     price_range = request.args.get('price_range')
@@ -334,6 +335,16 @@ def vehicles():
         min_price=min_price,
         max_price=max_price
     )
+    
+    # Search filter
+    if search:
+        search_lower = search.lower()
+        all_filtered_vehicles = [
+            v for v in all_filtered_vehicles 
+            if search_lower in v.make.lower() 
+            or search_lower in v.model.lower() 
+            or search_lower in v.vehicle_id.lower()
+        ]
     
     # Filter by status
     if status == 'available':
@@ -374,6 +385,7 @@ def vehicles():
                          pagination=pagination,
                          all_makes=all_makes,
                          user=user,
+                         current_search=search,
                          current_type=vehicle_type,
                          current_make=make,
                          current_price_range=price_range,
@@ -581,8 +593,24 @@ def return_vehicle(vehicle_id):
 def my_rentals():
     """View rental history."""
     page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '').strip()
     user = user_dao.get_by_id(session['user_id'])
     rental_history = list(user.rental_history)
+    
+    # Search filter
+    if search:
+        search_lower = search.lower()
+        filtered_history = []
+        for rental in rental_history:
+            # Get vehicle details for searching
+            vehicle = vehicle_dao.get_by_id(rental.vehicle_id)
+            if vehicle:
+                # Search in vehicle_id, make, and model
+                if (search_lower in rental.vehicle_id.lower() or
+                    search_lower in vehicle.make.lower() or
+                    search_lower in vehicle.model.lower()):
+                    filtered_history.append(rental)
+        rental_history = filtered_history
     
     # Paginate results
     pagination = paginate(rental_history, page, per_page=10)
@@ -590,7 +618,60 @@ def my_rentals():
     return render_template('my_rentals.html', 
                          user=user, 
                          rental_history=pagination['items'],
-                         pagination=pagination)
+                         pagination=pagination,
+                         current_search=search)
+
+
+@app.route('/invoice')
+@customer_required
+def view_invoice():
+    """View invoice for a specific rental."""
+    vehicle_id = request.args.get('vehicle_id')
+    start_date = request.args.get('start_date')
+    
+    user = user_dao.get_by_id(session['user_id'])
+    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    
+    if not vehicle:
+        flash('Vehicle not found.', 'danger')
+        return redirect(url_for('my_rentals'))
+    
+    # Find the rental record
+    rental_record = None
+    for rental in user.rental_history:
+        if rental.vehicle_id == vehicle_id and rental.period.start_date == start_date:
+            rental_record = rental
+            break
+    
+    if not rental_record:
+        flash('Rental record not found.', 'warning')
+        return redirect(url_for('my_rentals'))
+    
+    # Calculate invoice details
+    days = rental_record.period.calculate_duration()
+    discount_factor = user.discount_factor(days)
+    
+    # Calculate original cost (before discount)
+    original_cost = rental_record.total_cost / discount_factor
+    
+    # Calculate discount rate as percentage
+    discount_rate = (1 - discount_factor) * 100
+    
+    # Format to 2 decimal places
+    total_cost = f"{rental_record.total_cost:.2f}"
+    original_cost = f"{original_cost:.2f}"
+    discount_rate = f"{discount_rate:.2f}"
+    
+    return render_template('rental_confirmation.html',
+                         vehicle=vehicle,
+                         user=user,
+                         start_date=rental_record.period.start_date,
+                         end_date=rental_record.period.end_date,
+                         total_cost=total_cost,
+                         original_cost=original_cost,
+                         discount_rate=discount_rate,
+                         days=days,
+                         is_invoice=True)
 
 
 # Staff routes
