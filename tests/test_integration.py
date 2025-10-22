@@ -78,7 +78,7 @@ class TestEndToEndRentalWorkflow:
         assert services['auth_service'].can_rent(user) == True
         
         # Step 3: Browse available vehicles
-        period = RentalPeriod("01-01-2025", "05-01-2025")
+        period = RentalPeriod("01-01-2025 09:00", "05-01-2025 18:00")
         available = services['rental_service'].get_available_vehicles(period)
         assert len(available) == 2  # Both car and bike available
         
@@ -111,7 +111,7 @@ class TestEndToEndRentalWorkflow:
         """Test: Multiple users renting different vehicles."""
         services = setup_system
         
-        period = RentalPeriod("01-01-2025", "05-01-2025")
+        period = RentalPeriod("01-01-2025 09:00", "05-01-2025 18:00")
         
         # Corporate user rents car
         cost1 = services['rental_service'].rent_vehicle("CAR001", "CORP001", period)
@@ -131,13 +131,13 @@ class TestEndToEndRentalWorkflow:
         """Test: System prevents overlapping rentals."""
         services = setup_system
         
-        period1 = RentalPeriod("01-01-2025", "05-01-2025")
+        period1 = RentalPeriod("01-01-2025 09:00", "05-01-2025 18:00")
         
         # First user rents car
         services['rental_service'].rent_vehicle("CAR001", "CORP001", period1)
         
         # Second user tries to rent same car for overlapping period
-        period2 = RentalPeriod("03-01-2025", "07-01-2025")
+        period2 = RentalPeriod("03-01-2025 09:00", "07-01-2025 18:00")
         with pytest.raises(ValueError):
             services['rental_service'].rent_vehicle("CAR001", "IND001", period2)
     
@@ -145,7 +145,7 @@ class TestEndToEndRentalWorkflow:
         """Test: Corporate user gets 15% discount."""
         services = setup_system
         
-        period = RentalPeriod("01-01-2025", "03-01-2025")  # 3 days
+        period = RentalPeriod("01-01-2025 09:00", "03-01-2025 18:00")  # 3 days
         
         # Corporate user rents car
         # Base: 50 * 3 = 150, with 15% discount = 127.5
@@ -157,7 +157,7 @@ class TestEndToEndRentalWorkflow:
         services = setup_system
         
         # Short rental (no discount)
-        period_short = RentalPeriod("01-01-2025", "03-01-2025")  # 3 days
+        period_short = RentalPeriod("01-01-2025 09:00", "03-01-2025 18:00")  # 3 days
         cost_short = services['rental_service'].rent_vehicle("CAR001", "IND001", period_short)
         # Base: 50 * 3 = 150, no discount
         assert cost_short == 150.0
@@ -166,7 +166,7 @@ class TestEndToEndRentalWorkflow:
         services['rental_service'].return_vehicle("CAR001", "IND001")
         
         # Long rental (10% discount)
-        period_long = RentalPeriod("10-01-2025", "17-01-2025")  # 8 days
+        period_long = RentalPeriod("10-01-2025 09:00", "17-01-2025 18:00")  # 8 days
         cost_long = services['rental_service'].rent_vehicle("CAR001", "IND001", period_long)
         # Base: 50 * 8 = 400, with 10% discount = 360
         assert cost_long == 360.0
@@ -224,7 +224,7 @@ class TestStaffManagementWorkflow:
         services['user_dao'].add(user)
         
         # Create rental
-        period = RentalPeriod("01-01-2025", "05-01-2025")
+        period = RentalPeriod("01-01-2025 09:00", "05-01-2025 18:00")
         car.add_rental("IND001", period, 200.0)
         user.add_rental_record(car.rental_history[0])
         

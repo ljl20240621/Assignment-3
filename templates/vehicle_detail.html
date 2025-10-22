@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row mb-3">
     <div class="col-12">
-        <a href="{{ url_for('vehicles') }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ url_for('customer.vehicles') }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to Vehicles
         </a>
     </div>
@@ -65,7 +65,7 @@
                 
                 {% if user.kind != 'Staff' %}
                 <div class="d-grid gap-2">
-                    <a href="{{ url_for('rent_vehicle', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-success btn-lg">
+                    <a href="{{ url_for('customer.rent_vehicle', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-success btn-lg">
                         <i class="bi bi-cart-plus"></i> Rent This Vehicle
                     </a>
                 </div>

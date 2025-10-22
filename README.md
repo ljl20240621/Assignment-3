@@ -140,11 +140,17 @@ pytest tests/ --cov=models --cov-report=html
 
 ```
 Assignment-3/
-├── app.py                  # Flask application and routes (Controller)
+├── app.py                  # Flask application configuration
 ├── run.py                  # Application entry point
 ├── init_data.py           # Sample data initialization
 ├── requirements.txt       # Python dependencies
 ├── README.md              # This file
+│
+├── controllers/           # Controller Layer (Blueprints)
+│   ├── __init__.py        # Shared decorators
+│   ├── auth_controller.py # Authentication routes
+│   ├── customer_controller.py # Customer routes
+│   └── staff_controller.py    # Staff/Admin routes
 │
 ├── models/                # Model Layer
 │   ├── dao/              # Data Access Objects
@@ -327,13 +333,16 @@ The application uses Python's `pickle` module for data persistence:
 
 ## 🛠️ Technical Implementation
 
-### Architecture: MVC Pattern
+### Architecture: MVC Pattern with Blueprints
 - **Model**: Business logic, entities, DAOs, and services
 - **View**: HTML templates with Jinja2
-- **Controller**: Flask routes in `app.py`
+- **Controller**: Flask Blueprints (auth, customer, staff) for modular routing
+  - `auth_controller`: Authentication and authorization (5 routes)
+  - `customer_controller`: Vehicle browsing and rental operations (7 routes)
+  - `staff_controller`: Administrative management (11 routes)
 
 ### Key Technologies
-- **Backend**: Flask, Python 3.8+
+- **Backend**: Flask with Blueprints, Python 3.8+
 - **Frontend**: Bootstrap 5, JavaScript
 - **Data Persistence**: Pickle
 - **Testing**: pytest
@@ -344,6 +353,7 @@ The application uses Python's `pickle` module for data persistence:
 - **Inheritance**: Base classes (Vehicle, Renter) with specialized subclasses
 - **Polymorphism**: Abstract methods with concrete implementations
 - **Abstraction**: Service layer abstracts business logic from controllers
+- **Modular Design**: Blueprint-based controller separation for better code organization
 
 ## 📊 Testing Coverage
 

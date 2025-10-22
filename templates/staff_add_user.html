@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row mb-3">
     <div class="col-12">
-        <a href="{{ url_for('staff_users') }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ url_for('staff.users') }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to User Management
         </a>
     </div>
@@ -18,7 +18,7 @@
                 <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Add New User</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('staff_add_user') }}">
+                <form method="POST" action="{{ url_for('staff.add_user') }}">
                     <div class="mb-3">
                         <label for="user_type" class="form-label">User Type *</label>
                         <select class="form-select" id="user_type" name="user_type" required>
@@ -67,7 +67,7 @@
                         <button type="submit" class="btn btn-success btn-lg">
                             <i class="bi bi-check-circle"></i> Create User
                         </button>
-                        <a href="{{ url_for('staff_users') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('staff.users') }}" class="btn btn-outline-secondary">
                             Cancel
                         </a>
                     </div>

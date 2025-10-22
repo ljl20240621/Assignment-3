@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row mb-3">
     <div class="col-12">
-        <a href="{{ url_for('vehicle_detail', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ url_for('customer.vehicle_detail', vehicle_id=vehicle.vehicle_id) }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to Vehicle Details
         </a>
     </div>
@@ -47,7 +47,7 @@
                 
                 <hr>
                 
-                <form method="POST" action="{{ url_for('rent_vehicle', vehicle_id=vehicle.vehicle_id) }}">
+                <form method="POST" action="{{ url_for('customer.rent_vehicle', vehicle_id=vehicle.vehicle_id) }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="start_datetime" class="form-label">Start Date & Time</label>
@@ -75,7 +75,7 @@
                         <button type="submit" class="btn btn-success btn-lg">
                             <i class="bi bi-check-circle"></i> Confirm Rental
                         </button>
-                        <a href="{{ url_for('vehicles') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('customer.vehicles') }}" class="btn btn-outline-secondary">
                             Cancel
                         </a>
                     </div>

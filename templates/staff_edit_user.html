@@ -5,7 +5,7 @@
 {% block content %}
 <div class="row mb-3">
     <div class="col-12">
-        <a href="{{ url_for('staff_users') }}" class="btn btn-sm btn-outline-secondary">
+        <a href="{{ url_for('staff.users') }}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back to User Management
         </a>
     </div>
@@ -18,7 +18,7 @@
                 <h4 class="mb-0"><i class="bi bi-pencil-square"></i> Edit User</h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('staff_edit_user', user_id=user_to_edit.renter_id) }}">
+                <form method="POST" action="{{ url_for('staff.edit_user', user_id=user_to_edit.renter_id) }}">
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="renter_id" class="form-label">User ID</label>
@@ -70,7 +70,7 @@
                         <button type="submit" class="btn btn-primary btn-lg" onclick="return confirm('Are you sure you want to update this user?')">
                             <i class="bi bi-check-circle"></i> Save Changes
                         </button>
-                        <a href="{{ url_for('staff_users') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('staff.users') }}" class="btn btn-outline-secondary">
                             Cancel
                         </a>
                     </div>

@@ -58,10 +58,10 @@
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-lightning-fill"></i> Quick Actions</h5>
                 <div class="d-grid gap-2 d-md-flex">
-                    <a href="{{ url_for('vehicles') }}" class="btn btn-primary">
+                    <a href="{{ url_for('customer.vehicles') }}" class="btn btn-primary">
                         <i class="bi bi-search"></i> Browse Vehicles
                     </a>
-                    <a href="{{ url_for('my_rentals') }}" class="btn btn-secondary">
+                    <a href="{{ url_for('customer.my_rentals') }}" class="btn btn-secondary">
                         <i class="bi bi-list-check"></i> View My Rentals
                     </a>
                 </div>
@@ -97,13 +97,13 @@
                                 <td>{{ rental.period.start_date }} to {{ rental.period.end_date }}</td>
                                 <td>${{ rental.total_cost|round(2) }}</td>
                                 <td>
-                                    <a href="{{ url_for('view_invoice', vehicle_id=rental.vehicle_id, start_date=rental.period.start_date) }}" 
+                                    <a href="{{ url_for('customer.view_invoice', vehicle_id=rental.vehicle_id, start_date=rental.period.start_date) }}" 
                                        class="btn btn-sm btn-info" target="_blank">
                                         <i class="bi bi-receipt"></i> View
                                     </a>
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
+                                    <a href="{{ url_for('customer.return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-arrow-return-left"></i> Return
                                     </a>
                                 </td>
@@ -152,7 +152,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('view_invoice', vehicle_id=rental.vehicle_id, start_date=rental.period.start_date) }}" 
+                                    <a href="{{ url_for('customer.view_invoice', vehicle_id=rental.vehicle_id, start_date=rental.period.start_date) }}" 
                                        class="btn btn-sm btn-info" target="_blank">
                                         <i class="bi bi-receipt"></i> View
                                     </a>
@@ -162,11 +162,11 @@
                         </tbody>
                     </table>
                 </div>
-                <a href="{{ url_for('my_rentals') }}" class="btn btn-sm btn-outline-primary">
+                <a href="{{ url_for('customer.my_rentals') }}" class="btn btn-sm btn-outline-primary">
                     View All Rentals <i class="bi bi-arrow-right"></i>
                 </a>
                 {% else %}
-                <p class="text-muted mb-0">No rental history yet. <a href="{{ url_for('vehicles') }}">Start browsing vehicles!</a></p>
+                <p class="text-muted mb-0">No rental history yet. <a href="{{ url_for('customer.vehicles') }}">Start browsing vehicles!</a></p>
                 {% endif %}
             </div>
         </div>

@@ -1,0 +1,431 @@
+"""
+Customer Controller - Handles vehicle browsing, rental, and return operations.
+"""
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+from controllers import login_required, customer_required
+from datetime import datetime
+import json
+
+customer_bp = Blueprint('customer', __name__)
+
+
+def paginate(items, page, per_page=10):
+    """
+    Paginate a list of items.
+    Returns a dict with items for current page and pagination info.
+    """
+    total = len(items)
+    total_pages = (total + per_page - 1) // per_page  # Ceiling division
+    
+    # Ensure page is within valid range
+    page = max(1, min(page, total_pages if total_pages > 0 else 1))
+    
+    start = (page - 1) * per_page
+    end = start + per_page
+    
+    return {
+        'items': items[start:end],
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'total_pages': total_pages,
+        'has_prev': page > 1,
+        'has_next': page < total_pages,
+        'prev_page': page - 1 if page > 1 else None,
+        'next_page': page + 1 if page < total_pages else None
+    }
+
+
+@customer_bp.route('/vehicles')
+@login_required
+def vehicles():
+    """Vehicle listing page."""
+    vehicle_dao = current_app.config['VEHICLE_DAO']
+    user_dao = current_app.config['USER_DAO']
+    rental_service = current_app.config['RENTAL_SERVICE']
+    
+    # Get filter parameters
+    search = request.args.get('search', '').strip()
+    vehicle_type = request.args.get('type')
+    make = request.args.get('make')
+    price_range = request.args.get('price_range')
+    status = request.args.get('status')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    page = request.args.get('page', 1, type=int)
+    
+    min_price = None
+    max_price = None
+    
+    if price_range == 'low':
+        max_price = 50
+    elif price_range == 'medium':
+        min_price = 51
+        max_price = 100
+    elif price_range == 'high':
+        min_price = 101
+    
+    # Filter vehicles
+    all_filtered_vehicles = rental_service.filter_vehicles(
+        vehicle_type=vehicle_type,
+        make=make,
+        min_price=min_price,
+        max_price=max_price
+    )
+    
+    # Search filter
+    if search:
+        search_lower = search.lower()
+        all_filtered_vehicles = [
+            v for v in all_filtered_vehicles 
+            if search_lower in v.make.lower() 
+            or search_lower in v.model.lower() 
+            or search_lower in v.vehicle_id.lower()
+        ]
+    
+    # Filter by status
+    if status == 'available':
+        all_filtered_vehicles = [v for v in all_filtered_vehicles if not v.get_active_rentals()]
+    elif status == 'rented':
+        all_filtered_vehicles = [v for v in all_filtered_vehicles if v.get_active_rentals()]
+    
+    # Filter by availability period
+    if start_date and end_date:
+        try:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+            end_dt = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+            
+            # Convert to DD-MM-YYYY HH:MM format for RentalPeriod
+            start_formatted = start_dt.strftime('%d-%m-%Y %H:%M')
+            end_formatted = end_dt.strftime('%d-%m-%Y %H:%M')
+            
+            # Create a rental period to check availability
+            from models.services.rental_period import RentalPeriod
+            check_period = RentalPeriod(start_formatted, end_formatted)
+            
+            # Filter to only vehicles available during this period
+            all_filtered_vehicles = [v for v in all_filtered_vehicles if v.is_available(check_period)]
+        except (ValueError, Exception) as e:
+            flash(f'Invalid date range: {str(e)}', 'warning')
+    
+    # Paginate results (9 cards per page for better grid layout: 3 columns x 3 rows)
+    pagination = paginate(all_filtered_vehicles, page, per_page=9)
+    
+    # Get all makes for filter dropdown
+    all_vehicles = vehicle_dao.get_all()
+    all_makes = sorted(set(v.make for v in all_vehicles))
+    
+    user = user_dao.get_by_id(session['user_id'])
+    
+    return render_template('vehicles.html',
+                         vehicles=pagination['items'],
+                         pagination=pagination,
+                         all_makes=all_makes,
+                         user=user,
+                         current_search=search,
+                         current_type=vehicle_type,
+                         current_make=make,
+                         current_price_range=price_range,
+                         current_status=status,
+                         current_start_date=start_date,
+                         current_end_date=end_date)
+
+
+@customer_bp.route('/vehicles/<vehicle_id>')
+@login_required
+def vehicle_detail(vehicle_id):
+    """Vehicle detail page."""
+    vehicle_dao = current_app.config['VEHICLE_DAO']
+    user_dao = current_app.config['USER_DAO']
+    
+    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    
+    if not vehicle:
+        flash('Vehicle not found.', 'danger')
+        return redirect(url_for('customer.vehicles'))
+    
+    user = user_dao.get_by_id(session['user_id'])
+    rental_history = vehicle.rental_history
+    
+    # Get booked date ranges for availability calendar
+    active_rentals = vehicle.get_active_rentals()
+    booked_ranges = []
+    for rental in active_rentals:
+        # Parse datetime strings (DD-MM-YYYY HH:MM)
+        start_parts = rental.period.start_date.split(' ')[0].split('-')
+        end_parts = rental.period.end_date.split(' ')[0].split('-')
+        
+        # Convert to YYYY-MM-DD for JavaScript
+        start_date_str = f"{start_parts[2]}-{start_parts[1]}-{start_parts[0]}"
+        end_date_str = f"{end_parts[2]}-{end_parts[1]}-{end_parts[0]}"
+        
+        booked_ranges.append({
+            'start': start_date_str,
+            'end': end_date_str
+        })
+    
+    booked_ranges_json = json.dumps(booked_ranges)
+    
+    return render_template('vehicle_detail.html',
+                         vehicle=vehicle,
+                         user=user,
+                         rental_history=rental_history,
+                         booked_ranges=booked_ranges_json)
+
+
+@customer_bp.route('/rent/<vehicle_id>', methods=['GET', 'POST'])
+@customer_required
+def rent_vehicle(vehicle_id):
+    """Rent a vehicle."""
+    vehicle_dao = current_app.config['VEHICLE_DAO']
+    user_dao = current_app.config['USER_DAO']
+    rental_service = current_app.config['RENTAL_SERVICE']
+    
+    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    
+    if not vehicle:
+        flash('Vehicle not found.', 'danger')
+        return redirect(url_for('customer.vehicles'))
+    
+    # Get booked date ranges for this vehicle
+    booked_ranges = []
+    for rental in vehicle.rental_history:
+        if not rental.returned:  # Only consider active rentals
+            booked_ranges.append({
+                'start': rental.period.start_date,
+                'end': rental.period.end_date
+            })
+    
+    if request.method == 'POST':
+        start_datetime = request.form.get('start_datetime')
+        end_datetime = request.form.get('end_datetime')
+        
+        try:
+            # Convert datetime from YYYY-MM-DDTHH:MM to DD-MM-YYYY HH:MM
+            start_dt = datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M')
+            end_dt = datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M')
+            start_datetime_formatted = start_dt.strftime('%d-%m-%Y %H:%M')
+            end_datetime_formatted = end_dt.strftime('%d-%m-%Y %H:%M')
+            
+            from models.services.rental_period import RentalPeriod
+            period = RentalPeriod(start_datetime_formatted, end_datetime_formatted)
+            
+            # Calculate rental details for invoice
+            user = user_dao.get_by_id(session['user_id'])
+            days = period.calculate_duration()
+            discount_factor = user.discount_factor(days)
+            original_cost = vehicle.daily_rate * days
+            discount_rate = (1 - discount_factor) * 100  # Convert to percentage
+            
+            total_cost = rental_service.rent_vehicle(
+                vehicle_id,
+                session['user_id'],
+                period
+            )
+            
+            flash(f'Vehicle rented successfully! Total cost: ${total_cost:.2f}', 'success')
+            return redirect(url_for('customer.rental_confirmation', vehicle_id=vehicle_id, 
+                                  start_date=start_datetime_formatted, 
+                                  end_date=end_datetime_formatted,
+                                  total_cost=f'{total_cost:.2f}',
+                                  original_cost=f'{original_cost:.2f}',
+                                  discount_rate=f'{discount_rate:.2f}',
+                                  days=days))
+        
+        except ValueError as e:
+            flash(str(e), 'danger')
+    
+    user = user_dao.get_by_id(session['user_id'])
+    
+    # Convert booked ranges to JavaScript-friendly format (YYYY-MM-DD)
+    booked_ranges_js = []
+    for rental_range in booked_ranges:
+        # Convert DD-MM-YYYY to YYYY-MM-DD
+        start_parts = rental_range['start'].split('-')
+        end_parts = rental_range['end'].split('-')
+        booked_ranges_js.append({
+            'start': f'{start_parts[2]}-{start_parts[1]}-{start_parts[0]}',
+            'end': f'{end_parts[2]}-{end_parts[1]}-{end_parts[0]}'
+        })
+    
+    return render_template('rent_vehicle.html', 
+                         vehicle=vehicle, 
+                         user=user,
+                         booked_ranges=json.dumps(booked_ranges_js))
+
+
+@customer_bp.route('/rental-confirmation')
+@customer_required
+def rental_confirmation():
+    """Rental confirmation/invoice page."""
+    vehicle_dao = current_app.config['VEHICLE_DAO']
+    user_dao = current_app.config['USER_DAO']
+    
+    vehicle_id = request.args.get('vehicle_id')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    total_cost = request.args.get('total_cost')
+    original_cost = request.args.get('original_cost')
+    discount_rate = request.args.get('discount_rate')
+    days = request.args.get('days')
+    
+    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    user = user_dao.get_by_id(session['user_id'])
+    
+    return render_template('rental_confirmation.html',
+                         vehicle=vehicle,
+                         user=user,
+                         start_date=start_date,
+                         end_date=end_date,
+                         total_cost=total_cost,
+                         original_cost=original_cost,
+                         discount_rate=discount_rate,
+                         days=days)
+
+
+@customer_bp.route('/return/<vehicle_id>', methods=['GET', 'POST'])
+@customer_required
+def return_vehicle(vehicle_id):
+    """Return a rented vehicle."""
+    vehicle_dao = current_app.config['VEHICLE_DAO']
+    user_dao = current_app.config['USER_DAO']
+    rental_service = current_app.config['RENTAL_SERVICE']
+    
+    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    user = user_dao.get_by_id(session['user_id'])
+    
+    if not vehicle:
+        flash('Vehicle not found.', 'danger')
+        return redirect(url_for('customer.my_rentals'))
+    
+    # Find active rental for this vehicle and user
+    active_rental = None
+    for rental in user.rental_history:
+        if rental.vehicle_id == vehicle_id and not rental.returned:
+            active_rental = rental
+            break
+    
+    if not active_rental:
+        flash('No active rental found for this vehicle.', 'warning')
+        return redirect(url_for('customer.my_rentals'))
+    
+    if request.method == 'POST':
+        return_datetime = request.form.get('return_datetime')
+        
+        try:
+            # Convert datetime from YYYY-MM-DDTHH:MM to DD-MM-YYYY HH:MM
+            return_dt = datetime.strptime(return_datetime, '%Y-%m-%dT%H:%M')
+            return_datetime_formatted = return_dt.strftime('%d-%m-%Y %H:%M')
+            
+            # Validate return datetime
+            start_dt = datetime.strptime(active_rental.period.start_date, '%d-%m-%Y %H:%M')
+            if return_dt < start_dt:
+                flash('Return date & time cannot be before the rental start!', 'danger')
+                return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental)
+            
+            # Return the vehicle
+            success = rental_service.return_vehicle(vehicle_id, session['user_id'])
+            
+            if success:
+                flash('Vehicle returned successfully!', 'success')
+                return redirect(url_for('customer.my_rentals'))
+            else:
+                flash('Failed to return vehicle. Please try again.', 'danger')
+        
+        except ValueError as e:
+            flash(str(e), 'danger')
+    
+    return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental)
+
+
+@customer_bp.route('/my-rentals')
+@customer_required
+def my_rentals():
+    """View rental history."""
+    vehicle_dao = current_app.config['VEHICLE_DAO']
+    user_dao = current_app.config['USER_DAO']
+    
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '').strip()
+    user = user_dao.get_by_id(session['user_id'])
+    rental_history = list(user.rental_history)
+    
+    # Search filter
+    if search:
+        search_lower = search.lower()
+        filtered_history = []
+        for rental in rental_history:
+            # Get vehicle details for searching
+            vehicle = vehicle_dao.get_by_id(rental.vehicle_id)
+            if vehicle:
+                # Search in vehicle_id, make, and model
+                if (search_lower in rental.vehicle_id.lower() or
+                    search_lower in vehicle.make.lower() or
+                    search_lower in vehicle.model.lower()):
+                    filtered_history.append(rental)
+        rental_history = filtered_history
+    
+    # Paginate results
+    pagination = paginate(rental_history, page, per_page=10)
+    
+    return render_template('my_rentals.html', 
+                         user=user, 
+                         rental_history=pagination['items'],
+                         pagination=pagination,
+                         current_search=search)
+
+
+@customer_bp.route('/invoice')
+@customer_required
+def view_invoice():
+    """View invoice for a specific rental."""
+    vehicle_dao = current_app.config['VEHICLE_DAO']
+    user_dao = current_app.config['USER_DAO']
+    
+    vehicle_id = request.args.get('vehicle_id')
+    start_date = request.args.get('start_date')
+    
+    user = user_dao.get_by_id(session['user_id'])
+    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    
+    if not vehicle:
+        flash('Vehicle not found.', 'danger')
+        return redirect(url_for('customer.my_rentals'))
+    
+    # Find the rental record
+    rental_record = None
+    for rental in user.rental_history:
+        if rental.vehicle_id == vehicle_id and rental.period.start_date == start_date:
+            rental_record = rental
+            break
+    
+    if not rental_record:
+        flash('Rental record not found.', 'warning')
+        return redirect(url_for('customer.my_rentals'))
+    
+    # Calculate invoice details
+    days = rental_record.period.calculate_duration()
+    discount_factor = user.discount_factor(days)
+    
+    # Calculate original cost (before discount)
+    original_cost = rental_record.total_cost / discount_factor
+    
+    # Calculate discount rate as percentage
+    discount_rate = (1 - discount_factor) * 100
+    
+    # Format to 2 decimal places
+    total_cost = f"{rental_record.total_cost:.2f}"
+    original_cost = f"{original_cost:.2f}"
+    discount_rate = f"{discount_rate:.2f}"
+    
+    return render_template('rental_confirmation.html',
+                         vehicle=vehicle,
+                         user=user,
+                         start_date=rental_record.period.start_date,
+                         end_date=rental_record.period.end_date,
+                         total_cost=total_cost,
+                         original_cost=original_cost,
+                         discount_rate=discount_rate,
+                         days=days,
+                         is_invoice=True)
+

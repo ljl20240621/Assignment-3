@@ -13,7 +13,7 @@
 
 <div class="row mb-4">
     <div class="col-12">
-        <a href="{{ url_for('staff_add_vehicle') }}" class="btn btn-success">
+        <a href="{{ url_for('staff.add_vehicle') }}" class="btn btn-success">
             <i class="bi bi-plus-circle"></i> Add New Vehicle
         </a>
     </div>
@@ -63,7 +63,7 @@
                                 </td>
                                 <td>{{ v.rental_history|length }}</td>
                                 <td>
-                                    <form method="POST" action="{{ url_for('staff_delete_vehicle', vehicle_id=v.vehicle_id) }}" style="display: inline;">
+                                    <form method="POST" action="{{ url_for('staff.delete_vehicle', vehicle_id=v.vehicle_id) }}" style="display: inline;">
                                         <button type="submit" class="btn btn-sm btn-danger" 
                                                 onclick="return confirm('Are you sure you want to delete this vehicle?')">
                                             <i class="bi bi-trash"></i> Delete

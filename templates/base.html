@@ -14,7 +14,7 @@
     {% if session.user_id %}
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+            <a class="navbar-brand" href="{{ url_for('auth.dashboard') }}">
                 <i class="bi bi-car-front-fill"></i> Vehicle Rental
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -23,18 +23,18 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                        <a class="nav-link" href="{{ url_for('auth.dashboard') }}">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
                     {% if session.user_type != 'Staff' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('vehicles') }}">
+                        <a class="nav-link" href="{{ url_for('customer.vehicles') }}">
                             <i class="bi bi-car-front"></i> Vehicles
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('my_rentals') }}">
+                        <a class="nav-link" href="{{ url_for('customer.my_rentals') }}">
                             <i class="bi bi-list-check"></i> My Rentals
                         </a>
                     </li>
@@ -44,18 +44,18 @@
                             <i class="bi bi-gear"></i> Manage
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="manageDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('staff_users') }}">Users</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('staff_vehicles') }}">Vehicles</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('staff_rentals') }}">Rentals</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('staff.users') }}">Users</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('staff.vehicles') }}">Vehicles</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('staff.rentals') }}">Rentals</a></li>
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('staff_analytics') }}">
+                        <a class="nav-link" href="{{ url_for('staff.analytics') }}">
                             <i class="bi bi-graph-up"></i> Analytics
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('staff_activities') }}">
+                        <a class="nav-link" href="{{ url_for('staff.activities') }}">
                             <i class="bi bi-activity"></i> Activities
                         </a>
                     </li>
@@ -69,7 +69,7 @@
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li><a class="dropdown-item disabled">{{ session.user_type }} User</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
                                 <i class="bi bi-box-arrow-right"></i> Logout
                             </a></li>
                         </ul>

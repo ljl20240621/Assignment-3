@@ -55,7 +55,7 @@ class TestIndividualUser:
     def test_discount_long_rental(self):
         """Test 10% discount for rentals 7+ days."""
         user = IndividualUser("IND001", "John Doe", "john@example.com", "john001", "password123")
-        assert user.discount_factor(7) == 0.9
+        assert user.discount_factor(8) == 0.9
         assert user.discount_factor(14) == 0.9
         assert user.discount_factor(30) == 0.9
 

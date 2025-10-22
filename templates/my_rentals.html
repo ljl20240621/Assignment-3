@@ -14,7 +14,7 @@
 <!-- Search Bar -->
 <div class="row mb-3">
     <div class="col-12">
-        <form method="GET" action="{{ url_for('my_rentals') }}">
+        <form method="GET" action="{{ url_for('customer.my_rentals') }}">
             <div class="input-group input-group-lg">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input type="text" class="form-control" name="search" id="search" 
@@ -24,7 +24,7 @@
                     <i class="bi bi-search"></i> Search
                 </button>
                 {% if current_search %}
-                <a href="{{ url_for('my_rentals') }}" class="btn btn-outline-secondary">
+                <a href="{{ url_for('customer.my_rentals') }}" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle"></i> Clear
                 </a>
                 {% endif %}
@@ -68,14 +68,14 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{{ url_for('view_invoice', vehicle_id=rental.vehicle_id, start_date=rental.period.start_date) }}" 
+                                    <a href="{{ url_for('customer.view_invoice', vehicle_id=rental.vehicle_id, start_date=rental.period.start_date) }}" 
                                        class="btn btn-sm btn-info" target="_blank">
                                         <i class="bi bi-receipt"></i> View
                                     </a>
                                 </td>
                                 <td>
                                     {% if not rental.returned %}
-                                    <a href="{{ url_for('return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
+                                    <a href="{{ url_for('customer.return_vehicle', vehicle_id=rental.vehicle_id) }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-arrow-return-left"></i> Return
                                     </a>
                                     {% else %}
@@ -127,7 +127,7 @@
     <div class="col-12">
         <div class="alert alert-info">
             <h5><i class="bi bi-info-circle"></i> No Rental History</h5>
-            <p class="mb-0">You haven't rented any vehicles yet. <a href="{{ url_for('vehicles') }}">Browse available vehicles</a> to get started!</p>
+            <p class="mb-0">You haven't rented any vehicles yet. <a href="{{ url_for('customer.vehicles') }}">Browse available vehicles</a> to get started!</p>
         </div>
     </div>
 </div>
