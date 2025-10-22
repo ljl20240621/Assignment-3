@@ -311,6 +311,9 @@ def vehicles():
     vehicle_type = request.args.get('type')
     make = request.args.get('make')
     price_range = request.args.get('price_range')
+    status = request.args.get('status')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     page = request.args.get('page', 1, type=int)
     
     min_price = None
@@ -332,6 +335,31 @@ def vehicles():
         max_price=max_price
     )
     
+    # Filter by status
+    if status == 'available':
+        all_filtered_vehicles = [v for v in all_filtered_vehicles if not v.get_active_rentals()]
+    elif status == 'rented':
+        all_filtered_vehicles = [v for v in all_filtered_vehicles if v.get_active_rentals()]
+    
+    # Filter by availability period
+    if start_date and end_date:
+        try:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+            end_dt = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+            
+            # Convert to DD-MM-YYYY HH:MM format for RentalPeriod
+            start_formatted = start_dt.strftime('%d-%m-%Y %H:%M')
+            end_formatted = end_dt.strftime('%d-%m-%Y %H:%M')
+            
+            # Create a rental period to check availability
+            from models.services.rental_period import RentalPeriod
+            check_period = RentalPeriod(start_formatted, end_formatted)
+            
+            # Filter to only vehicles available during this period
+            all_filtered_vehicles = [v for v in all_filtered_vehicles if v.is_available(check_period)]
+        except (ValueError, Exception) as e:
+            flash(f'Invalid date range: {str(e)}', 'warning')
+    
     # Paginate results (9 cards per page for better grid layout: 3 columns x 3 rows)
     pagination = paginate(all_filtered_vehicles, page, per_page=9)
     
@@ -348,7 +376,10 @@ def vehicles():
                          user=user,
                          current_type=vehicle_type,
                          current_make=make,
-                         current_price_range=price_range)
+                         current_price_range=price_range,
+                         current_status=status,
+                         current_start_date=start_date,
+                         current_end_date=end_date)
 
 
 @app.route('/vehicles/<vehicle_id>')
@@ -364,10 +395,31 @@ def vehicle_detail(vehicle_id):
     user = user_dao.get_by_id(session['user_id'])
     rental_history = vehicle.rental_history
     
+    # Get booked date ranges for availability calendar
+    active_rentals = vehicle.get_active_rentals()
+    booked_ranges = []
+    for rental in active_rentals:
+        # Parse datetime strings (DD-MM-YYYY HH:MM)
+        start_parts = rental.period.start_date.split(' ')[0].split('-')
+        end_parts = rental.period.end_date.split(' ')[0].split('-')
+        
+        # Convert to YYYY-MM-DD for JavaScript
+        start_date_str = f"{start_parts[2]}-{start_parts[1]}-{start_parts[0]}"
+        end_date_str = f"{end_parts[2]}-{end_parts[1]}-{end_parts[0]}"
+        
+        booked_ranges.append({
+            'start': start_date_str,
+            'end': end_date_str
+        })
+    
+    import json
+    booked_ranges_json = json.dumps(booked_ranges)
+    
     return render_template('vehicle_detail.html',
                          vehicle=vehicle,
                          user=user,
-                         rental_history=rental_history)
+                         rental_history=rental_history,
+                         booked_ranges=booked_ranges_json)
 
 
 @app.route('/rent/<vehicle_id>', methods=['GET', 'POST'])

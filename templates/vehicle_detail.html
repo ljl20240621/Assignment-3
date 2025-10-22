@@ -116,6 +116,16 @@
             </div>
         </div>
         
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Availability Calendar</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Green dates are available, Red dates are booked.</p>
+                <div id="calendar-container"></div>
+            </div>
+        </div>
+        
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-clock-history"></i> Rental History</h5>
@@ -162,6 +172,166 @@
         height: 300px;
         object-fit: cover;
     }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        margin-top: 10px;
+    }
+    
+    .calendar-header {
+        text-align: center;
+        font-weight: bold;
+        padding: 8px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .calendar-day {
+        text-align: center;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .calendar-day:hover {
+        transform: scale(1.05);
+    }
+    
+    .calendar-day.empty {
+        background-color: #f8f9fa;
+        border: none;
+        cursor: default;
+    }
+    
+    .calendar-day.available {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border-color: #a3cfbb;
+    }
+    
+    .calendar-day.booked {
+        background-color: #f8d7da;
+        color: #842029;
+        border-color: #f1aeb5;
+    }
+    
+    .calendar-day.past {
+        background-color: #e9ecef;
+        color: #6c757d;
+        border-color: #ced4da;
+        cursor: default;
+    }
+    
+    .calendar-month-header {
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin: 20px 0 10px 0;
+        padding: 10px;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 4px;
+    }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const bookedRanges = {{ booked_ranges|safe }};
+    
+    // Helper function to parse date string (DD-MM-YYYY HH:MM)
+    function parseDate(dateStr) {
+        const parts = dateStr.split(' ');
+        const datePart = parts[0].split('-');
+        return new Date(datePart[2], datePart[1] - 1, datePart[0]);
+    }
+    
+    // Check if a date is booked
+    function isDateBooked(date) {
+        const dateStr = date.toISOString().split('T')[0];
+        for (let range of bookedRanges) {
+            const start = new Date(range.start);
+            const end = new Date(range.end);
+            if (date >= start && date <= end) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // Generate calendar for the next 3 months
+    function generateCalendar() {
+        const container = document.getElementById('calendar-container');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Generate for next 3 months
+        for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
+            const currentDate = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Month header
+            const monthHeader = document.createElement('div');
+            monthHeader.className = 'calendar-month-header';
+            monthHeader.textContent = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            container.appendChild(monthHeader);
+            
+            // Calendar grid
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+            
+            // Day headers
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayNames.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Add empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day empty';
+                grid.appendChild(emptyDay);
+            }
+            
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                dayCell.textContent = day;
+                
+                if (date < today) {
+                    dayCell.classList.add('past');
+                } else if (isDateBooked(date)) {
+                    dayCell.classList.add('booked');
+                    dayCell.title = 'This date is booked';
+                } else {
+                    dayCell.classList.add('available');
+                    dayCell.title = 'This date is available';
+                }
+                
+                grid.appendChild(dayCell);
+            }
+            
+            container.appendChild(grid);
+        }
+    }
+    
+    // Generate calendar when page loads
+    document.addEventListener('DOMContentLoaded', generateCalendar);
+</script>
 {% endblock %}
 

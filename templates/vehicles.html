@@ -20,7 +20,7 @@
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ url_for('vehicles') }}">
-                    <div class="row">
+                    <div class="row mb-3">
                         <div class="col-md-3">
                             <label for="type" class="form-label">Vehicle Type</label>
                             <select class="form-select" name="type" id="type">
@@ -48,9 +48,33 @@
                                 <option value="high" {% if current_price_range == 'high' %}selected{% endif %}>$101+</option>
                             </select>
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" name="status" id="status">
+                                <option value="">All Status</option>
+                                <option value="available" {% if current_status == 'available' %}selected{% endif %}>Available</option>
+                                <option value="rented" {% if current_status == 'rented' %}selected{% endif %}>Currently Rented</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-5">
+                            <label for="start_date" class="form-label">
+                                <i class="bi bi-calendar-check"></i> Check Availability (Optional)
+                            </label>
+                            <input type="datetime-local" class="form-control" name="start_date" id="start_date" 
+                                   value="{{ current_start_date }}" min="{{ now().strftime('%Y-%m-%dT%H:%M') }}">
+                        </div>
+                        <div class="col-md-5">
+                            <label for="end_date" class="form-label">
+                                <i class="bi bi-calendar-x"></i> To
+                            </label>
+                            <input type="datetime-local" class="form-control" name="end_date" id="end_date" 
+                                   value="{{ current_end_date }}" min="{{ now().strftime('%Y-%m-%dT%H:%M') }}">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search"></i> Apply Filters
+                                <i class="bi bi-search"></i> Apply
                             </button>
                         </div>
                     </div>
@@ -75,6 +99,22 @@
                     <p class="card-text">
                         <span class="badge bg-secondary">{{ vehicle.__class__.__name__ }}</span>
                         <span class="badge bg-info">{{ vehicle.year }}</span>
+                        {% set active_rentals = vehicle.get_active_rentals() %}
+                        {% if active_rentals %}
+                            {% set has_overdue = namespace(value=False) %}
+                            {% for rental in active_rentals %}
+                                {% if rental.period.is_overdue() %}
+                                    {% set has_overdue.value = True %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if has_overdue.value %}
+                            <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> Overdue</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Rented</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Available</span>
+                        {% endif %}
                     </p>
                     <p class="card-text">
                         {% if vehicle.__class__.__name__ == 'Car' %}
