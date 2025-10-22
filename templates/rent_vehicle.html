@@ -50,24 +50,24 @@
                 <form method="POST" action="{{ url_for('rent_vehicle', vehicle_id=vehicle.vehicle_id) }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" 
-                                   min="{{ now().strftime('%Y-%m-%d') }}" required>
+                            <label for="start_datetime" class="form-label">Start Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="start_datetime" name="start_datetime" 
+                                   min="{{ now().strftime('%Y-%m-%dT%H:%M') }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="date" class="form-control" id="end_date" name="end_date" 
-                                   min="{{ now().strftime('%Y-%m-%d') }}" required>
+                            <label for="end_datetime" class="form-label">End Date & Time</label>
+                            <input type="datetime-local" class="form-control" id="end_datetime" name="end_datetime" 
+                                   min="{{ now().strftime('%Y-%m-%dT%H:%M') }}" required>
                         </div>
                     </div>
                     
                     <div class="alert alert-info">
                         <h6><i class="bi bi-info-circle"></i> Rental Terms:</h6>
                         <ul class="mb-0">
-                            <li>Minimum rental period: 1 day</li>
-                            <li>Vehicle must be returned by end date</li>
-                            <li>Late returns will be flagged as overdue</li>
-                            <li>Total cost will be calculated based on duration and your user type</li>
+                            <li>Rental period must be at least 1 hour</li>
+                            <li>Vehicle must be returned by the specified end date & time</li>
+                            <li>Returns after end time will be flagged as overdue</li>
+                            <li>Total cost will be calculated based on duration (rounded to full days) and your user type</li>
                         </ul>
                     </div>
                     
@@ -136,59 +136,67 @@
         return dates;
     }
     
-    // Add date validation
-    document.getElementById('end_date').addEventListener('change', function() {
-        const startDate = document.getElementById('start_date').value;
-        const endDate = this.value;
+    // Add datetime validation
+    document.getElementById('end_datetime').addEventListener('change', function() {
+        const startDatetime = document.getElementById('start_datetime').value;
+        const endDatetime = this.value;
         
-        if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
-            alert('End date must be after start date!');
+        if (startDatetime && endDatetime && new Date(endDatetime) <= new Date(startDatetime)) {
+            alert('End date & time must be after start date & time!');
             this.value = '';
             return;
         }
         
         // Check for overlap with booked ranges
-        if (startDate && endDate) {
+        if (startDatetime && endDatetime) {
+            const startDate = startDatetime.split('T')[0];
+            const endDate = endDatetime.split('T')[0];
             const overlap = doesRangeOverlap(startDate, endDate);
             if (overlap) {
                 alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
-                this.value = '';
             }
         }
     });
     
-    document.getElementById('start_date').addEventListener('change', function() {
-        const endDateInput = document.getElementById('end_date');
-        const startDate = this.value;
-        endDateInput.min = this.value;
+    document.getElementById('start_datetime').addEventListener('change', function() {
+        const endDatetimeInput = document.getElementById('end_datetime');
+        const startDatetime = this.value;
+        endDatetimeInput.min = this.value;
         
         // Check if start date itself is booked
+        const startDate = startDatetime.split('T')[0];
         if (isDateBooked(startDate)) {
             alert('This date is already booked. Please choose a different date.');
-            this.value = '';
-            return;
         }
         
-        // If end date is already set, validate the range
-        if (endDateInput.value) {
-            const overlap = doesRangeOverlap(startDate, endDateInput.value);
+        // If end datetime is already set, validate the range
+        if (endDatetimeInput.value) {
+            const endDate = endDatetimeInput.value.split('T')[0];
+            const overlap = doesRangeOverlap(startDate, endDate);
             if (overlap) {
                 alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
-                endDateInput.value = '';
             }
         }
     });
     
     // Form submission validation
     document.querySelector('form').addEventListener('submit', function(e) {
-        const startDate = document.getElementById('start_date').value;
-        const endDate = document.getElementById('end_date').value;
+        const startDatetime = document.getElementById('start_datetime').value;
+        const endDatetime = document.getElementById('end_datetime').value;
         
-        if (startDate && endDate) {
-            const overlap = doesRangeOverlap(startDate, endDate);
-            if (overlap) {
+        if (startDatetime && endDatetime) {
+            if (new Date(endDatetime) <= new Date(startDatetime)) {
                 e.preventDefault();
-                alert(`This vehicle is already booked from ${overlap.start} to ${overlap.end}. Please choose different dates.`);
+                alert('End date & time must be after start date & time!');
+                return false;
+            }
+            
+            // Calculate minimum duration (at least 1 hour)
+            const diffMs = new Date(endDatetime) - new Date(startDatetime);
+            const diffHours = diffMs / (1000 * 60 * 60);
+            if (diffHours < 1) {
+                e.preventDefault();
+                alert('Rental period must be at least 1 hour!');
                 return false;
             }
         }

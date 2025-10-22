@@ -30,6 +30,7 @@
                                 <th>Duration</th>
                                 <th>Cost</th>
                                 <th>Status</th>
+                                <th>Overdue</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -72,6 +73,13 @@
                                     <span class="badge bg-success">Returned</span>
                                     {% else %}
                                     <span class="badge bg-primary">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not item.record.returned and item.record.period.is_overdue() %}
+                                    <span class="badge bg-danger"><i class="bi bi-exclamation-triangle"></i> Yes</span>
+                                    {% else %}
+                                    <span class="text-muted">No</span>
                                     {% endif %}
                                 </td>
                             </tr>

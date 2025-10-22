@@ -362,17 +362,17 @@ def rent_vehicle(vehicle_id):
             })
     
     if request.method == 'POST':
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
+        start_datetime = request.form.get('start_datetime')
+        end_datetime = request.form.get('end_datetime')
         
         try:
-            # Convert dates from YYYY-MM-DD to DD-MM-YYYY
-            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
-            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-            start_date_formatted = start_dt.strftime('%d-%m-%Y')
-            end_date_formatted = end_dt.strftime('%d-%m-%Y')
+            # Convert datetime from YYYY-MM-DDTHH:MM to DD-MM-YYYY HH:MM
+            start_dt = datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M')
+            end_dt = datetime.strptime(end_datetime, '%Y-%m-%dT%H:%M')
+            start_datetime_formatted = start_dt.strftime('%d-%m-%Y %H:%M')
+            end_datetime_formatted = end_dt.strftime('%d-%m-%Y %H:%M')
             
-            period = RentalPeriod(start_date_formatted, end_date_formatted)
+            period = RentalPeriod(start_datetime_formatted, end_datetime_formatted)
             
             # Calculate rental details for invoice
             user = user_dao.get_by_id(session['user_id'])
@@ -389,8 +389,8 @@ def rent_vehicle(vehicle_id):
             
             flash(f'Vehicle rented successfully! Total cost: ${total_cost:.2f}', 'success')
             return redirect(url_for('rental_confirmation', vehicle_id=vehicle_id, 
-                                  start_date=start_date_formatted, 
-                                  end_date=end_date_formatted,
+                                  start_date=start_datetime_formatted, 
+                                  end_date=end_datetime_formatted,
                                   total_cost=f'{total_cost:.2f}',
                                   original_cost=f'{original_cost:.2f}',
                                   discount_rate=f'{discount_rate:.2f}',
@@ -468,17 +468,17 @@ def return_vehicle(vehicle_id):
         return redirect(url_for('my_rentals'))
     
     if request.method == 'POST':
-        return_date = request.form.get('return_date')
+        return_datetime = request.form.get('return_datetime')
         
         try:
-            # Convert date from YYYY-MM-DD to DD-MM-YYYY
-            return_dt = datetime.strptime(return_date, '%Y-%m-%d')
-            return_date_formatted = return_dt.strftime('%d-%m-%Y')
+            # Convert datetime from YYYY-MM-DDTHH:MM to DD-MM-YYYY HH:MM
+            return_dt = datetime.strptime(return_datetime, '%Y-%m-%dT%H:%M')
+            return_datetime_formatted = return_dt.strftime('%d-%m-%Y %H:%M')
             
-            # Validate return date
-            start_dt = datetime.strptime(active_rental.period.start_date, '%d-%m-%Y')
+            # Validate return datetime
+            start_dt = datetime.strptime(active_rental.period.start_date, '%d-%m-%Y %H:%M')
             if return_dt < start_dt:
-                flash('Return date cannot be before the rental start date!', 'danger')
+                flash('Return date & time cannot be before the rental start!', 'danger')
                 return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental)
             
             # Return the vehicle

@@ -49,14 +49,11 @@ class RentalDAO(BaseDAO[RentalRecord]):
         return [r for r in self._records if r.returned]
     
     def find_overdue_rentals(self) -> List[RentalRecord]:
-        """Find all overdue rentals (active rentals past their end date)."""
-        today = datetime.today()
+        """Find all overdue rentals (active rentals past their end datetime)."""
         overdue = []
         for record in self._records:
-            if not record.returned:
-                end_date = record.period.end_dt
-                if end_date < today:
-                    overdue.append(record)
+            if not record.returned and record.period.is_overdue():
+                overdue.append(record)
         return overdue
     
     def load(self) -> None:
