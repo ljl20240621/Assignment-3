@@ -183,12 +183,32 @@ def register():
                 flash('All fields are required.', 'danger')
                 return render_template('register.html')
             
+            # Email validation
+            import re
+            email_pattern = r'^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+            if not re.match(email_pattern, contact_info, re.IGNORECASE):
+                flash('Please enter a valid email address.', 'danger')
+                return render_template('register.html')
+            
             if password != confirm_password:
                 flash('Passwords do not match.', 'danger')
                 return render_template('register.html')
             
-            if len(password) < 6:
-                flash('Password must be at least 6 characters long.', 'danger')
+            # Password complexity validation
+            if len(password) < 8:
+                flash('Password must be at least 8 characters long.', 'danger')
+                return render_template('register.html')
+            
+            if not re.search(r'[A-Z]', password):
+                flash('Password must contain at least one uppercase letter.', 'danger')
+                return render_template('register.html')
+            
+            if not re.search(r'[a-z]', password):
+                flash('Password must contain at least one lowercase letter.', 'danger')
+                return render_template('register.html')
+            
+            if not re.search(r'[0-9]', password):
+                flash('Password must contain at least one number.', 'danger')
                 return render_template('register.html')
             
             # Check if username already exists

@@ -35,17 +35,21 @@
                             </div>
                             
                             <div class="mb-3">
-                                <label for="contact_info" class="form-label fw-semibold">Contact Information *</label>
+                                <label for="contact_info" class="form-label fw-semibold">Email Address *</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light">
                                         <i class="bi bi-envelope"></i>
                                     </span>
-                                    <input type="text" 
+                                    <input type="email" 
                                            class="form-control" 
                                            id="contact_info" 
                                            name="contact_info"
-                                           placeholder="Email or phone number" 
+                                           placeholder="your.email@example.com" 
+                                           pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
                                            required>
+                                </div>
+                                <div class="invalid-feedback" id="emailError">
+                                    Please enter a valid email address.
                                 </div>
                             </div>
                             
@@ -75,8 +79,21 @@
                                            class="form-control" 
                                            id="password" 
                                            name="password"
-                                           placeholder="At least 6 characters" 
+                                           placeholder="Enter your password"
+                                           minlength="8"
                                            required>
+                                </div>
+                                <div id="passwordHelp" class="form-text">
+                                    <small>
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Password must be at least 8 characters and include:
+                                    </small>
+                                    <ul class="small mb-0 ps-4" style="list-style-type: none;">
+                                        <li id="lengthCheck"><i class="bi bi-x-circle text-danger"></i> At least 8 characters</li>
+                                        <li id="uppercaseCheck"><i class="bi bi-x-circle text-danger"></i> One uppercase letter (A-Z)</li>
+                                        <li id="lowercaseCheck"><i class="bi bi-x-circle text-danger"></i> One lowercase letter (a-z)</li>
+                                        <li id="numberCheck"><i class="bi bi-x-circle text-danger"></i> One number (0-9)</li>
+                                    </ul>
                                 </div>
                             </div>
                             
@@ -90,8 +107,11 @@
                                            class="form-control" 
                                            id="confirm_password" 
                                            name="confirm_password"
-                                           placeholder="Confirm your password" 
+                                           placeholder="Confirm your password"
+                                           minlength="8"
                                            required>
+                                </div>
+                                <div class="invalid-feedback d-block" id="confirmPasswordError" style="display: none !important;">
                                 </div>
                             </div>
                             
@@ -102,7 +122,7 @@
                                 </small>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary btn-lg w-100 py-3 mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg w-100 py-3 mb-3" id="submitBtn" disabled>
                                 <i class="bi bi-person-plus me-2"></i>
                                 Create Account
                             </button>
@@ -228,6 +248,164 @@
             padding: 2rem 1.5rem !important;
         }
     }
+    
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+    
+    .btn-primary:disabled:hover {
+        transform: none !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
 </style>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+    // Password validation regex
+    const passwordRegex = {
+        minLength: /.{8,}/,
+        uppercase: /[A-Z]/,
+        lowercase: /[a-z]/,
+        number: /[0-9]/
+    };
+    
+    // Get form elements
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('contact_info');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirm_password');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    // Validation state
+    let validationState = {
+        name: false,
+        email: false,
+        username: false,
+        password: false,
+        confirmPassword: false
+    };
+    
+    // Check if all fields are valid
+    function checkFormValidity() {
+        const allValid = Object.values(validationState).every(v => v === true);
+        submitBtn.disabled = !allValid;
+    }
+    
+    // Validate name
+    nameInput.addEventListener('input', function() {
+        validationState.name = this.value.trim().length > 0;
+        checkFormValidity();
+    });
+    
+    // Validate email
+    emailInput.addEventListener('input', function() {
+        const emailPattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
+        validationState.email = emailPattern.test(this.value);
+        
+        if (this.value && !validationState.email) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+        
+        checkFormValidity();
+    });
+    
+    // Validate username
+    usernameInput.addEventListener('input', function() {
+        validationState.username = this.value.trim().length > 0;
+        checkFormValidity();
+    });
+    
+    // Validate password with real-time feedback
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        
+        // Check each requirement
+        const checks = {
+            length: passwordRegex.minLength.test(password),
+            uppercase: passwordRegex.uppercase.test(password),
+            lowercase: passwordRegex.lowercase.test(password),
+            number: passwordRegex.number.test(password)
+        };
+        
+        // Update UI for each check
+        updateCheckIcon('lengthCheck', checks.length);
+        updateCheckIcon('uppercaseCheck', checks.uppercase);
+        updateCheckIcon('lowercaseCheck', checks.lowercase);
+        updateCheckIcon('numberCheck', checks.number);
+        
+        // Password is valid if all checks pass
+        validationState.password = Object.values(checks).every(v => v === true);
+        
+        // Also revalidate confirm password if it has value
+        if (confirmPasswordInput.value) {
+            validateConfirmPassword();
+        }
+        
+        checkFormValidity();
+    });
+    
+    // Validate confirm password with real-time feedback
+    confirmPasswordInput.addEventListener('input', validateConfirmPassword);
+    
+    function validateConfirmPassword() {
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        const errorDiv = document.getElementById('confirmPasswordError');
+        
+        if (confirmPassword) {
+            if (password !== confirmPassword) {
+                confirmPasswordInput.classList.add('is-invalid');
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = '⚠️ Passwords do not match!';
+                validationState.confirmPassword = false;
+            } else {
+                confirmPasswordInput.classList.remove('is-invalid');
+                confirmPasswordInput.classList.add('is-valid');
+                errorDiv.style.display = 'none';
+                validationState.confirmPassword = true;
+            }
+        } else {
+            confirmPasswordInput.classList.remove('is-invalid', 'is-valid');
+            errorDiv.style.display = 'none';
+            validationState.confirmPassword = false;
+        }
+        
+        checkFormValidity();
+    }
+    
+    // Helper function to update check icon
+    function updateCheckIcon(elementId, isValid) {
+        const element = document.getElementById(elementId);
+        const icon = element.querySelector('i');
+        
+        if (isValid) {
+            icon.className = 'bi bi-check-circle-fill text-success';
+        } else {
+            icon.className = 'bi bi-x-circle text-danger';
+        }
+    }
+    
+    // Form submission validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        // Final validation check
+        if (!Object.values(validationState).every(v => v === true)) {
+            e.preventDefault();
+            alert('Please fill in all required fields correctly.');
+            return false;
+        }
+        
+        // Check password match one more time
+        if (passwordInput.value !== confirmPasswordInput.value) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+            return false;
+        }
+    });
+</script>
+{% endblock %}
