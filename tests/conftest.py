@@ -5,6 +5,8 @@ import pytest
 import sys
 import os
 
-# Add models to path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models'))
+# Add project root to Python path to enable absolute imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 

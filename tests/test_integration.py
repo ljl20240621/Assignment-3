@@ -5,20 +5,24 @@ Tests end-to-end workflows.
 import pytest
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models'))
 
-from dao.vehicle_dao import VehicleDAO
-from dao.user_dao import UserDAO
-from dao.rental_dao import RentalDAO
-from services.rental_service import RentalService
-from services.auth_service import AuthService
-from services.analytics_service import AnalyticsService
-from vehicle_model.car import Car
-from vehicle_model.motorbike import Motorbike
-from renter_model.corporate_user import CorporateUser
-from renter_model.individual_user import IndividualUser
-from renter_model.staff import Staff
-from services.rental_period import RentalPeriod
+# Add project root to path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from models.dao.vehicle_dao import VehicleDAO
+from models.dao.user_dao import UserDAO
+from models.dao.rental_dao import RentalDAO
+from models.services.rental_service import RentalService
+from models.services.auth_service import AuthService
+from models.services.analytics_service import AnalyticsService
+from models.vehicle_model.car import Car
+from models.vehicle_model.motorbike import Motorbike
+from models.renter_model.corporate_user import CorporateUser
+from models.renter_model.individual_user import IndividualUser
+from models.renter_model.staff import Staff
+from models.services.rental_period import RentalPeriod
 
 
 class TestEndToEndRentalWorkflow:
@@ -228,7 +232,7 @@ class TestStaffManagementWorkflow:
         car.add_rental("IND001", period, 200.0)
         user.add_rental_record(car.rental_history[0])
         
-        from vehicle_model.vehicle import RentalRecord
+        from models.vehicle_model.vehicle import RentalRecord
         rental_record = RentalRecord("CAR001", "IND001", period, 200.0)
         services['rental_dao'].add(rental_record)
         

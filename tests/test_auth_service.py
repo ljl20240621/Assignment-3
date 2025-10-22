@@ -4,13 +4,17 @@ Unit tests for AuthService.
 import pytest
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models'))
 
-from services.auth_service import AuthService
-from dao.user_dao import UserDAO
-from renter_model.corporate_user import CorporateUser
-from renter_model.individual_user import IndividualUser
-from renter_model.staff import Staff
+# Add project root to path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from models.services.auth_service import AuthService
+from models.dao.user_dao import UserDAO
+from models.renter_model.corporate_user import CorporateUser
+from models.renter_model.individual_user import IndividualUser
+from models.renter_model.staff import Staff
 
 
 class TestAuthService:

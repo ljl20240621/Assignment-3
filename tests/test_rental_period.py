@@ -4,9 +4,13 @@ Unit tests for RentalPeriod class.
 import pytest
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models'))
 
-from services.rental_period import RentalPeriod
+# Add project root to path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from models.services.rental_period import RentalPeriod
 
 
 class TestRentalPeriod:

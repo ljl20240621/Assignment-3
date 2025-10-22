@@ -4,12 +4,16 @@ Unit tests for Vehicle classes (Car, Motorbike, Truck).
 import pytest
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models'))
 
-from vehicle_model.car import Car
-from vehicle_model.motorbike import Motorbike
-from vehicle_model.truck import Truck
-from services.rental_period import RentalPeriod
+# Add project root to path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from models.vehicle_model.car import Car
+from models.vehicle_model.motorbike import Motorbike
+from models.vehicle_model.truck import Truck
+from models.services.rental_period import RentalPeriod
 
 
 class TestCar:
