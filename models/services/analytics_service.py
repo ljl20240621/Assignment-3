@@ -186,7 +186,7 @@ class AnalyticsService:
         # Sort by date (most recent first)
         from datetime import datetime
         activities.sort(
-            key=lambda x: datetime.strptime(x["date"], "%d-%m-%Y"),
+            key=lambda x: datetime.strptime(x["date"], "%d-%m-%Y %H:%M"),
             reverse=True
         )
         
