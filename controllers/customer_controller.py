@@ -110,12 +110,12 @@ def vehicles():
                 end_dt = datetime.strptime(end_date, '%Y-%m-%d')
             
             # Validate date range
-            if end_dt <= start_dt:
-                flash('End date must be after start date.', 'warning')
+            if end_dt < start_dt:
+                flash('End date must be after or equal to start date.', 'warning')
             else:
                 # Convert to DD-MM-YYYY HH:MM format for RentalPeriod
-                start_formatted = start_dt.strftime('%d-%m-%Y %H:%M')
-                end_formatted = end_dt.strftime('%d-%m-%Y %H:%M')
+                start_formatted = start_dt.strftime('%d-%m-%Y 00:00')
+                end_formatted = end_dt.strftime('%d-%m-%Y 23:59')
                 
                 # Create a rental period to check availability
                 check_period = RentalPeriod(start_formatted, end_formatted)
@@ -127,6 +127,11 @@ def vehicles():
     
     # Paginate results (9 cards per page for better grid layout: 3 columns x 3 rows)
     pagination = paginate(all_filtered_vehicles, page, per_page=9)
+    
+    if start_date is None:
+        start_date = ''
+    if end_date is None:
+        end_date = ''
     
     # Get all makes for filter dropdown
     all_vehicles = vehicle_dao.get_all()
