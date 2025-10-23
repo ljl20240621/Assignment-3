@@ -297,10 +297,20 @@ def delete_vehicle(vehicle_id):
 @staff_bp.route('/rentals')
 @staff_required
 def rentals():
-    """Staff: View all rentals."""
+    """Staff: View all rentals with search functionality."""
     vehicle_dao = current_app.config['VEHICLE_DAO']
     user_dao = current_app.config['USER_DAO']
     rental_service = current_app.config['RENTAL_SERVICE']
+    
+    # Get search parameters
+    search = request.args.get('search', '').strip()
+    vehicle_filter = request.args.get('vehicle', '').strip()
+    user_filter = request.args.get('user', '').strip()
+    user_type_filter = request.args.get('user_type', '').strip()
+    start_date_filter = request.args.get('start_date', '').strip()
+    end_date_filter = request.args.get('end_date', '').strip()
+    status_filter = request.args.get('status', '').strip()
+    overdue_filter = request.args.get('overdue', '').strip()
     
     page = request.args.get('page', 1, type=int)
     all_rentals = rental_service.get_all_rental_records()
@@ -317,13 +327,109 @@ def rentals():
             'vehicle': vehicle
         })
     
+    # Apply filters
+    filtered_rentals = enriched_rentals
+    
+    if search:
+        filtered_rentals = [r for r in filtered_rentals if 
+                           search.lower() in r['record'].vehicle_id.lower() or
+                           search.lower() in r['record'].renter_id.lower() or
+                           (r['vehicle'] and search.lower() in f"{r['vehicle'].make} {r['vehicle'].model}".lower()) or
+                           (r['renter'] and search.lower() in r['renter'].name.lower())]
+    
+    if vehicle_filter:
+        filtered_rentals = [r for r in filtered_rentals if 
+                           vehicle_filter.lower() in r['record'].vehicle_id.lower() or
+                           (r['vehicle'] and vehicle_filter.lower() in f"{r['vehicle'].make} {r['vehicle'].model}".lower())]
+    
+    if user_filter:
+        filtered_rentals = [r for r in filtered_rentals if 
+                           user_filter.lower() in r['record'].renter_id.lower() or
+                           (r['renter'] and user_filter.lower() in r['renter'].name.lower())]
+    
+    if user_type_filter:
+        filtered_rentals = [r for r in filtered_rentals if 
+                           r['renter'] and r['renter'].kind.lower() == user_type_filter.lower()]
+    
+    if start_date_filter or end_date_filter:
+        # Filter by rental period date range
+        from datetime import datetime, time
+        try:
+            # Convert date strings to datetime objects with time boundaries
+            if start_date_filter:
+                start_date = datetime.strptime(start_date_filter, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+            else:
+                start_date = None
+                
+            if end_date_filter:
+                end_date = datetime.strptime(end_date_filter, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+            else:
+                end_date = None
+            
+            def is_rental_in_date_range(rental):
+                if not rental['record'].period or not rental['record'].period.start_date or not rental['record'].period.end_date:
+                    return False
+                
+                # Parse rental period dates
+                rental_start = datetime.strptime(rental['record'].period.start_date, "%d-%m-%Y %H:%M")
+                rental_end = datetime.strptime(rental['record'].period.end_date, "%d-%m-%Y %H:%M")
+                
+                # Check if rental period overlaps with query range
+                if start_date and end_date:
+                    # Both dates provided: rental must overlap with query range
+                    return not (rental_end < start_date or rental_start > end_date)
+                elif start_date:
+                    # Only start date provided: rental must start on or after this date
+                    return rental_start >= start_date
+                elif end_date:
+                    # Only end date provided: rental must end on or before this date
+                    return rental_end <= end_date
+                return True
+                
+            filtered_rentals = [r for r in filtered_rentals if is_rental_in_date_range(r)]
+        except ValueError:
+            pass  # Invalid date format, ignore filter
+    
+    if status_filter:
+        if status_filter.lower() == 'active':
+            filtered_rentals = [r for r in filtered_rentals if not r['record'].returned]
+        elif status_filter.lower() == 'returned':
+            filtered_rentals = [r for r in filtered_rentals if r['record'].returned]
+    
+    if overdue_filter and overdue_filter.lower() == 'yes':
+        from datetime import datetime
+        now = datetime.now()
+        filtered_rentals = [r for r in filtered_rentals if 
+                           not r['record'].returned and 
+                           r['record'].period and 
+                           r['record'].period.end_date and
+                           datetime.strptime(r['record'].period.end_date, "%d-%m-%Y %H:%M") < now]
+    
     # Paginate results
-    pagination = paginate(enriched_rentals, page, per_page=10)
+    pagination = paginate(filtered_rentals, page, per_page=10)
+    
+    # Calculate global statistics for all rentals (not filtered)
+    total_rentals = len(enriched_rentals)
+    active_rentals = len([r for r in enriched_rentals if not r['record'].returned])
+    returned_rentals = len([r for r in enriched_rentals if r['record'].returned])
+    total_revenue = sum(r['record'].total_cost for r in enriched_rentals)
     
     return render_template('staff_rentals.html', 
                          rentals=pagination['items'],
                          pagination=pagination,
-                         user=user)
+                         user=user,
+                         total_rentals=total_rentals,
+                         active_rentals=active_rentals,
+                         returned_rentals=returned_rentals,
+                         total_revenue=total_revenue,
+                         search=search,
+                         vehicle_filter=vehicle_filter,
+                         user_filter=user_filter,
+                         user_type_filter=user_type_filter,
+                         start_date_filter=start_date_filter,
+                         end_date_filter=end_date_filter,
+                         status_filter=status_filter,
+                         overdue_filter=overdue_filter)
 
 
 @staff_bp.route('/analytics')

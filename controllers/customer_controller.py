@@ -45,7 +45,6 @@ def vehicles():
     rental_service = current_app.config['RENTAL_SERVICE']
     
     # Get filter parameters
-    search = request.args.get('search', '').strip()
     vehicle_type = request.args.get('type')
     make = request.args.get('make')
     price_range = request.args.get('price_range')
@@ -72,16 +71,6 @@ def vehicles():
         min_price=min_price,
         max_price=max_price
     )
-    
-    # Search filter
-    if search:
-        search_lower = search.lower()
-        all_filtered_vehicles = [
-            v for v in all_filtered_vehicles 
-            if search_lower in v.make.lower() 
-            or search_lower in v.model.lower() 
-            or search_lower in v.vehicle_id.lower()
-        ]
     
     # Filter by status
     if status == 'available':
@@ -150,7 +139,6 @@ def vehicles():
                          pagination=pagination,
                          all_makes=all_makes,
                          user=user,
-                         current_search=search,
                          current_type=vehicle_type,
                          current_make=make,
                          current_price_range=price_range,

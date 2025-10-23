@@ -2,6 +2,24 @@
 
 {% block title %}Staff Dashboard - Vehicle Rental System{% endblock %}
 
+{% block extra_css %}
+<style>
+.clickable-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.clickable-card:hover .opacity-75 {
+    opacity: 1 !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -15,34 +33,38 @@
 <!-- Summary Stats -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card text-white bg-primary">
+        <div class="card text-white bg-primary clickable-card" onclick="window.location.href='{{ url_for('staff.vehicles') }}'">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-car-front"></i> Total Vehicles</h5>
                 <h2 class="mb-0">{{ summary.total_vehicles }}</h2>
+                <small class="opacity-75">Click to view all vehicles</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-success">
+        <div class="card text-white bg-success clickable-card" onclick="window.location.href='{{ url_for('staff.users') }}'">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-people"></i> Total Users</h5>
                 <h2 class="mb-0">{{ summary.total_users }}</h2>
+                <small class="opacity-75">Click to view all users</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-info">
+        <div class="card text-white bg-info clickable-card" onclick="window.location.href='{{ url_for('staff.rentals') }}?status=active'">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-list-check"></i> Active Rentals</h5>
                 <h2 class="mb-0">{{ summary.active_rentals }}</h2>
+                <small class="opacity-75">Click to view active rentals</small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-warning">
+        <div class="card text-white bg-warning clickable-card" onclick="window.location.href='{{ url_for('staff.rentals') }}?overdue=yes'">
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> Overdue</h5>
                 <h2 class="mb-0">{{ summary.overdue_rentals }}</h2>
+                <small class="opacity-75">Click to view overdue rentals</small>
             </div>
         </div>
     </div>
@@ -68,7 +90,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-trophy"></i> Most Rented Vehicles</h5>
+                <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 5 Popular Vehicles</h5>
             </div>
             <div class="card-body">
                 {% if most_rented %}
@@ -101,7 +123,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-warning">
-                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Overdue Rentals</h5>
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Latest 5 Overdue Rentals</h5>
             </div>
             <div class="card-body">
                 {% if overdue_rentals %}
@@ -138,7 +160,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-activity"></i> Recent Activity</h5>
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Latest 5 Activities </h5>
             </div>
             <div class="card-body">
                 {% if recent_activities %}

@@ -139,7 +139,7 @@ def dashboard():
         # Staff dashboard with analytics
         summary = analytics_service.get_dashboard_summary()
         most_rented = analytics_service.get_most_rented_vehicles(5)
-        recent_activities = analytics_service.get_user_activity_logs(10)
+        recent_activities = analytics_service.get_user_activity_logs(5)
         overdue_rentals = rental_service.get_overdue_rentals()
         
         return render_template('staff_dashboard.html',

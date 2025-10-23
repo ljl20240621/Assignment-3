@@ -61,26 +61,6 @@
     </div>
 </div>
 
-<!-- Activity Summary -->
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h6>Total Rental Events</h6>
-                <h3>{{ activities | selectattr('type', 'equalto', 'rental') | list | length }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h6>Total Return Events</h6>
-                <h3>{{ activities | selectattr('type', 'equalto', 'return') | list | length }}</h3>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% else %}
 <div class="row">
     <div class="col-12">
