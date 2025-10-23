@@ -204,20 +204,24 @@ def rent_vehicle(vehicle_id):
     user_dao = current_app.config['USER_DAO']
     rental_service = current_app.config['RENTAL_SERVICE']
     
+    # Reload data to ensure we have the latest information
+    vehicle_dao.load()
+    user_dao.load()
+    
     vehicle = vehicle_dao.get_by_id(vehicle_id)
     
     if not vehicle:
         flash('Vehicle not found.', 'danger')
         return redirect(url_for('customer.vehicles'))
     
-    # Get booked date ranges for this vehicle
+    # Get booked date ranges for this vehicle - only active rentals
     booked_ranges = []
-    for rental in vehicle.rental_history:
-        if not rental.returned:  # Only consider active rentals
-            booked_ranges.append({
-                'start': rental.period.start_date,
-                'end': rental.period.end_date
-            })
+    active_rentals = vehicle.get_active_rentals()
+    for rental in active_rentals:
+        booked_ranges.append({
+            'start': rental.period.start_date,
+            'end': rental.period.end_date
+        })
     
     if request.method == 'POST':
         start_date = request.form.get('start_date')
@@ -268,9 +272,13 @@ def rent_vehicle(vehicle_id):
     # Convert booked ranges to JavaScript-friendly format (YYYY-MM-DD)
     booked_ranges_js = []
     for rental_range in booked_ranges:
-        # Convert DD-MM-YYYY to YYYY-MM-DD
-        start_parts = rental_range['start'].split('-')
-        end_parts = rental_range['end'].split('-')
+        # Convert DD-MM-YYYY HH:MM to YYYY-MM-DD
+        start_date_str = rental_range['start'].split(' ')[0]  # Get date part only
+        end_date_str = rental_range['end'].split(' ')[0]      # Get date part only
+        
+        start_parts = start_date_str.split('-')
+        end_parts = end_date_str.split('-')
+        
         booked_ranges_js.append({
             'start': f'{start_parts[2]}-{start_parts[1]}-{start_parts[0]}',
             'end': f'{end_parts[2]}-{end_parts[1]}-{end_parts[0]}'

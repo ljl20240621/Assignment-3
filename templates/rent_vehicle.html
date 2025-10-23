@@ -57,9 +57,12 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3 mb-md-0">
                                     <label for="start_date" class="form-label">Pickup Date</label>
-                                    <input type="date" class="form-control form-control-lg" id="start_date" name="start_date" 
-                                           min="{{ now().strftime('%Y-%m-%d') }}" required>
+                                    <input type="text" class="form-control form-control-lg" id="start_date" name="start_date" 
+                                           placeholder="Select pickup date" readonly required>
                                     <small class="text-muted">Select the date you want to pick up the vehicle</small>
+                                    <div id="start_date_help" class="text-danger small mt-1" style="display: none;">
+                                        <i class="bi bi-exclamation-triangle"></i> This date is not available
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="start_time" class="form-label">Pickup Time</label>
@@ -80,9 +83,12 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3 mb-md-0">
                                     <label for="end_date" class="form-label">Return Date</label>
-                                    <input type="date" class="form-control form-control-lg" id="end_date" name="end_date" 
-                                           min="{{ now().strftime('%Y-%m-%d') }}" required>
+                                    <input type="text" class="form-control form-control-lg" id="end_date" name="end_date" 
+                                           placeholder="Select return date" readonly required>
                                     <small class="text-muted">Select the date you plan to return the vehicle</small>
+                                    <div id="end_date_help" class="text-danger small mt-1" style="display: none;">
+                                        <i class="bi bi-exclamation-triangle"></i> This date is not available
+                                    </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="end_time" class="form-label">Return Time</label>
@@ -123,6 +129,20 @@
 <script>
     // Parse booked date ranges
     const bookedRanges = {{ booked_ranges|safe }};
+    
+    // Convert booked ranges to flatpickr format (disabled dates)
+    const disabledDates = [];
+    for (let range of bookedRanges) {
+        const start = new Date(range.start);
+        const end = new Date(range.end);
+        
+        // Add all dates in the range to disabled dates
+        const current = new Date(start);
+        while (current <= end) {
+            disabledDates.push(new Date(current));
+            current.setDate(current.getDate() + 1);
+        }
+    }
     
     // Function to combine date and time inputs
     function combineDateTime(dateInput, timeInput) {
@@ -166,9 +186,9 @@
         
         // Calculate minimum duration (at least 4 hour)
         const diffMs = endDateTime - startDateTime;
-        const diffHours = diffMs / (4000 * 60 * 60);
-        if (diffHours < 1) {
-            alert('Rental period must be at least 4 hour!');
+        const diffHours = diffMs / (1000 * 60 * 60); // Fix: use correct milliseconds calculation
+        if (diffHours < 4) {
+            alert('Rental period must be at least 4 hours!');
             return false;
         }
         
@@ -182,14 +202,31 @@
         return true;
     }
     
-    // Add validation on date/time change
-    document.getElementById('start_date').addEventListener('change', function() {
-        const endDateInput = document.getElementById('end_date');
-        endDateInput.min = this.value;
-        validateDateTimeInputs();
+    // Initialize Flatpickr for start date
+    const startDatePicker = flatpickr("#start_date", {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        disable: disabledDates,
+        onChange: function(selectedDates, dateStr, instance) {
+            // Update end date picker minimum date
+            if (selectedDates.length > 0) {
+                endDatePicker.set('minDate', dateStr);
+            }
+            validateDateTimeInputs();
+        }
     });
     
-    document.getElementById('end_date').addEventListener('change', validateDateTimeInputs);
+    // Initialize Flatpickr for end date
+    const endDatePicker = flatpickr("#end_date", {
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        disable: disabledDates,
+        onChange: function(selectedDates, dateStr, instance) {
+            validateDateTimeInputs();
+        }
+    });
+    
+    // Add validation on time change
     document.getElementById('start_time').addEventListener('change', validateDateTimeInputs);
     document.getElementById('end_time').addEventListener('change', validateDateTimeInputs);
     

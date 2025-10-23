@@ -258,10 +258,20 @@
     
     // Check if a date is booked
     function isDateBooked(date) {
+        // Normalize the input date to start of day for comparison
+        const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        
         for (let range of bookedRanges) {
             const start = new Date(range.start);
             const end = new Date(range.end);
-            if (date >= start && date <= end) {
+            
+            // Normalize range dates to start of day
+            const rangeStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            const rangeEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            
+            
+            // Check if the date falls within the range (inclusive)
+            if (checkDate >= rangeStart && checkDate <= rangeEnd) {
                 return true;
             }
         }
