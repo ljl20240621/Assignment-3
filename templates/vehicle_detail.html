@@ -248,6 +248,14 @@
         cursor: not-allowed;
         opacity: 0.6;
     }
+    
+    .calendar-day.unavailable-after-2pm {
+        background-color: #e9ecef;
+        color: #adb5bd;
+        border-color: #ced4da;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
 </style>
 {% endblock %}
 
@@ -256,7 +264,23 @@
     const bookedRanges = {{ booked_ranges|safe }};
     let currentMonth = 0; // Offset from today's month (0 = current month)
     
-    // Check if a date is booked
+    // Check if a date is affected by 14:00 rule (should be grayed out)
+    function isDateAffectedBy14Rule(date) {
+        const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        
+        // If checking today's date and current time is after 14:00 (2 PM), mark as affected
+        if (checkDate.getTime() === todayStart.getTime()) {
+            const currentHour = today.getHours();
+            if (currentHour >= 14) {
+                return true; // Today is affected by 14:00 rule
+            }
+        }
+        return false;
+    }
+    
+    // Check if a date is booked (actual bookings)
     function isDateBooked(date) {
         // Normalize the input date to start of day for comparison
         const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -268,7 +292,6 @@
             // Normalize range dates to start of day
             const rangeStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
             const rangeEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-            
             
             // Check if the date falls within the range (inclusive)
             if (checkDate >= rangeStart && checkDate <= rangeEnd) {
@@ -332,6 +355,9 @@
             
             if (date < today) {
                 dayCell.classList.add('past');
+            } else if (isDateAffectedBy14Rule(date)) {
+                dayCell.classList.add('unavailable-after-2pm');
+                dayCell.title = 'Unavailable after 2 PM today';
             } else if (isDateBooked(date)) {
                 dayCell.classList.add('booked');
                 dayCell.title = 'This date is booked';
@@ -370,4 +396,5 @@
     });
 </script>
 {% endblock %}
+
 

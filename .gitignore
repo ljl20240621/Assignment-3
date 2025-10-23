@@ -4,12 +4,11 @@ __pycache__/
 *$py.class
 *.so
 .Python
-*.pkl
 # Virtual Environment
 venv/
 env/
 ENV/
-
+*.pkl
 # Testing
 .pytest_cache/
 .coverage

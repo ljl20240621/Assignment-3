@@ -66,9 +66,19 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label for="start_time" class="form-label">Pickup Time</label>
-                                    <input type="time" class="form-control form-control-lg" id="start_time" name="start_time" 
-                                           value="09:00" required>
-                                    <small class="text-muted">Select the time you want to pick up the vehicle</small>
+                                    <select class="form-control form-control-lg" id="start_time" name="start_time" required>
+                                        <option value="09:00">09:00</option>
+                                        <option value="10:00">10:00</option>
+                                        <option value="11:00">11:00</option>
+                                        <option value="12:00">12:00</option>
+                                        <option value="13:00">13:00</option>
+                                        <option value="14:00">14:00</option>
+                                        <option value="15:00">15:00</option>
+                                        <option value="16:00">16:00</option>
+                                        <option value="17:00">17:00</option>
+                                        <option value="18:00">18:00</option>
+                                    </select>
+                                    <small class="text-muted">Select the time you want to pick up the vehicle (9:00 AM - 6:00 PM)</small>
                                 </div>
                             </div>
                         </div>
@@ -92,9 +102,19 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label for="end_time" class="form-label">Return Time</label>
-                                    <input type="time" class="form-control form-control-lg" id="end_time" name="end_time" 
-                                           value="13:00" required>
-                                    <small class="text-muted">Select the time you plan to return the vehicle</small>
+                                    <select class="form-control form-control-lg" id="end_time" name="end_time" required>
+                                        <option value="09:00">09:00</option>
+                                        <option value="10:00">10:00</option>
+                                        <option value="11:00">11:00</option>
+                                        <option value="12:00">12:00</option>
+                                        <option value="13:00">13:00</option>
+                                        <option value="14:00">14:00</option>
+                                        <option value="15:00">15:00</option>
+                                        <option value="16:00">16:00</option>
+                                        <option value="17:00">17:00</option>
+                                        <option value="18:00" selected>18:00</option>
+                                    </select>
+                                    <small class="text-muted">Select the time you plan to return the vehicle (9:00 AM - 6:00 PM)</small>
                                 </div>
                             </div>
                         </div>
@@ -132,6 +152,15 @@
     
     // Convert booked ranges to flatpickr format (disabled dates)
     const disabledDates = [];
+    
+    // Add today to disabled dates if current time is after 14:00 (2 PM)
+    const nowForDisabled = new Date();
+    const currentHourForDisabled = nowForDisabled.getHours();
+    if (currentHourForDisabled >= 14) {
+        const today = new Date(nowForDisabled.getFullYear(), nowForDisabled.getMonth(), nowForDisabled.getDate());
+        disabledDates.push(today);
+    }
+    
     for (let range of bookedRanges) {
         const start = new Date(range.start);
         const end = new Date(range.end);
@@ -202,15 +231,42 @@
         return true;
     }
     
+    // Calculate default dates based on current time
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    // If current time is after 14:00 (2 PM), default to tomorrow
+    const defaultStartDate = currentHour >= 14 ? 
+        new Date(now.getTime() + 24 * 60 * 60 * 1000) : 
+        now;
+    
+    // Default end date is the day after start date
+    const defaultEndDate = new Date(defaultStartDate.getTime() + 24 * 60 * 60 * 1000);
+    
+    // Format dates for Flatpickr
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    
     // Initialize Flatpickr for start date
     const startDatePicker = flatpickr("#start_date", {
         dateFormat: "Y-m-d",
         minDate: "today",
         disable: disabledDates,
+        defaultDate: formatDate(defaultStartDate),
         onChange: function(selectedDates, dateStr, instance) {
             // Update end date picker minimum date
             if (selectedDates.length > 0) {
                 endDatePicker.set('minDate', dateStr);
+                // Auto-set end date to next day if not already set
+                if (!endDatePicker.selectedDates.length) {
+                    const nextDay = new Date(selectedDates[0]);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    endDatePicker.setDate(formatDate(nextDay));
+                }
             }
             validateDateTimeInputs();
         }
@@ -219,12 +275,38 @@
     // Initialize Flatpickr for end date
     const endDatePicker = flatpickr("#end_date", {
         dateFormat: "Y-m-d",
-        minDate: "today",
+        minDate: formatDate(defaultStartDate),
         disable: disabledDates,
+        defaultDate: formatDate(defaultEndDate),
         onChange: function(selectedDates, dateStr, instance) {
             validateDateTimeInputs();
         }
     });
+    
+    // Set default time values based on current time
+    const setDefaultTimes = () => {
+        const startTimeSelect = document.getElementById('start_time');
+        const endTimeSelect = document.getElementById('end_time');
+        
+        // Set default start time based on current time
+        if (currentHour >= 14) {
+            // If after 2 PM, default to 9 AM next day
+            startTimeSelect.value = '09:00';
+        } else if (currentHour < 9) {
+            // If before 9 AM, default to 9 AM today
+            startTimeSelect.value = '09:00';
+        } else {
+            // If between 9 AM and 2 PM, default to next available hour
+            const nextHour = Math.min(Math.ceil((currentHour + 1) / 1) * 1, 18);
+            startTimeSelect.value = `${String(nextHour).padStart(2, '0')}:00`;
+        }
+        
+        // Set default end time to 6 PM next day
+        endTimeSelect.value = '18:00';
+    };
+    
+    // Set default times when page loads
+    setDefaultTimes();
     
     // Add validation on time change
     document.getElementById('start_time').addEventListener('change', validateDateTimeInputs);

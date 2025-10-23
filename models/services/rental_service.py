@@ -101,8 +101,11 @@ class RentalService:
                         record.returned = True
                         break
             
-            # Update the shared rental record
-            rental_record.returned = True
+            # Update the shared rental record in rental_dao
+            for record in self.rental_dao.get_all():
+                if record.rental_id == rental_id:
+                    record.returned = True
+                    break
             
             # Save changes
             self.vehicle_dao.save()
