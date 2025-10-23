@@ -87,7 +87,7 @@
                                 <div class="col-md-6">
                                     <label for="end_time" class="form-label">Return Time</label>
                                     <input type="time" class="form-control form-control-lg" id="end_time" name="end_time" 
-                                           value="09:00" required>
+                                           value="13:00" required>
                                     <small class="text-muted">Select the time you plan to return the vehicle</small>
                                 </div>
                             </div>
@@ -97,7 +97,7 @@
                     <div class="alert alert-info alert-static">
                         <h6><i class="bi bi-info-circle"></i> Rental Terms:</h6>
                         <ul class="mb-0">
-                            <li>Rental period must be at least 1 hour</li>
+                            <li>Rental period must be at least 4 hour</li>
                             <li>Vehicle must be returned by the specified end date & time</li>
                             <li>Returns after end time will be flagged as overdue</li>
                             <li>Total cost will be calculated based on duration (rounded to full days) and your user type</li>
@@ -164,11 +164,11 @@
             return false;
         }
         
-        // Calculate minimum duration (at least 1 hour)
+        // Calculate minimum duration (at least 4 hour)
         const diffMs = endDateTime - startDateTime;
-        const diffHours = diffMs / (1000 * 60 * 60);
+        const diffHours = diffMs / (4000 * 60 * 60);
         if (diffHours < 1) {
-            alert('Rental period must be at least 1 hour!');
+            alert('Rental period must be at least 4 hour!');
             return false;
         }
         
@@ -201,20 +201,6 @@
         }
     });
     
-    // Display booked dates info if any
-    if (bookedRanges.length > 0) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-warning';
-        alertDiv.innerHTML = '<h6><i class="bi bi-exclamation-triangle"></i> Currently Booked Periods:</h6><ul class="mb-0">';
-        bookedRanges.forEach(range => {
-            const startDate = new Date(range.start);
-            const endDate = new Date(range.end);
-            const formatOptions = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-            alertDiv.innerHTML += `<li>From ${startDate.toLocaleDateString('en-US', formatOptions)} to ${endDate.toLocaleDateString('en-US', formatOptions)}</li>`;
-        });
-        alertDiv.innerHTML += '</ul>';
-        document.querySelector('.alert.alert-info').parentNode.insertBefore(alertDiv, document.querySelector('.alert.alert-info'));
-    }
 </script>
 {% endblock %}
 

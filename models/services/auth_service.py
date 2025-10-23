@@ -27,29 +27,43 @@ class AuthService:
     
     def is_staff(self, user: Renter) -> bool:
         """Check if a user is staff."""
+        if user is None:
+            return False
         return user.kind == "Staff"
     
     def is_corporate(self, user: Renter) -> bool:
         """Check if a user is a corporate user."""
+        if user is None:
+            return False
         return user.kind == "Corporate"
     
     def is_individual(self, user: Renter) -> bool:
         """Check if a user is an individual user."""
+        if user is None:
+            return False
         return user.kind == "Individual"
     
     def can_rent(self, user: Renter) -> bool:
         """Check if a user can rent vehicles (staff cannot)."""
+        if user is None:
+            return False
         return user.kind in ["Corporate", "Individual"]
     
     def can_manage_users(self, user: Renter) -> bool:
         """Check if a user can manage other users (staff only)."""
+        if user is None:
+            return False
         return user.kind == "Staff"
     
     def can_manage_vehicles(self, user: Renter) -> bool:
         """Check if a user can manage vehicles (staff only)."""
+        if user is None:
+            return False
         return user.kind == "Staff"
     
     def can_view_all_rentals(self, user: Renter) -> bool:
         """Check if a user can view all rental histories (staff only)."""
+        if user is None:
+            return False
         return user.kind == "Staff"
 

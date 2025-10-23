@@ -134,6 +134,12 @@ def vehicles():
     
     user = user_dao.get_by_id(session['user_id'])
     
+    # Check if user exists
+    if not user:
+        flash('User not found. Please log in again.', 'danger')
+        session.clear()
+        return redirect(url_for('auth.login'))
+    
     return render_template('vehicles.html',
                          vehicles=pagination['items'],
                          pagination=pagination,
@@ -325,6 +331,12 @@ def return_vehicle(vehicle_id):
     vehicle = vehicle_dao.get_by_id(vehicle_id)
     user = user_dao.get_by_id(session['user_id'])
     
+    # Check if user exists
+    if not user:
+        flash('User not found. Please log in again.', 'danger')
+        session.clear()
+        return redirect(url_for('auth.login'))
+    
     if not vehicle:
         flash('Vehicle not found.', 'danger')
         return redirect(url_for(return_to))
@@ -397,6 +409,13 @@ def my_rentals():
     search = request.args.get('search', '').strip()
     status_filter = request.args.get('status', '').strip()
     user = user_dao.get_by_id(session['user_id'])
+    
+    # Check if user exists
+    if not user:
+        flash('User not found. Please log in again.', 'danger')
+        session.clear()
+        return redirect(url_for('auth.login'))
+    
     rental_history = list(user.rental_history)
     
     # Status filter

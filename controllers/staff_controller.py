@@ -44,6 +44,12 @@ def users():
     all_users = user_dao.get_all()
     user = user_dao.get_by_id(session['user_id'])
     
+    # Check if user exists
+    if not user:
+        flash('User not found. Please log in again.', 'danger')
+        session.clear()
+        return redirect(url_for('auth.login'))
+    
     # Paginate results
     pagination = paginate(all_users, page, per_page=10)
     

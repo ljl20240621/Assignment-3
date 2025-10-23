@@ -6,7 +6,15 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.rental_period import RentalPeriod
-from common.exceptions import OverlappingBookingError
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+# Define custom exception locally to avoid import issues
+class OverlappingBookingError(Exception):
+    """Raised when a requested rental period overlaps with an existing booking."""
+    def __init__(self, message: str):
+        super().__init__(message)
 
 
 @dataclass
@@ -134,17 +142,31 @@ class Vehicle(ABC):
         unreturned rental for this renter. Returns True if something was marked returned.
         """
         candidates = [r for r in self.__rental_history if r.renter_id == renter_id and not r.returned]
+        
+        if not candidates:
+            return False
+            
         if period is not None:
+            # Try exact match first
             for r in candidates:
                 if r.period.start_date == period.start_date and r.period.end_date == period.end_date:
                     r.returned = True
                     return True
+            
+            # If no exact match, try to find the most recent rental that overlaps
+            # This handles cases where the rental period might have been modified
+            for r in candidates:
+                if (r.period.start_date == period.start_date or 
+                    (r.period.start_date <= period.start_date and r.period.end_date >= period.start_date)):
+                    r.returned = True
+                    return True
             return False
-        # No period given: pick the last outstanding rental for that renter
-        if candidates:
-            candidates[-1].returned = True
+        else:
+            # No period given: pick the most recent outstanding rental for that renter
+            # Sort by start date to get the most recent one
+            candidates.sort(key=lambda x: x.period.start_date, reverse=True)
+            candidates[0].returned = True
             return True
-        return False
     
     # ----- Abstract methods -----
     @abstractmethod

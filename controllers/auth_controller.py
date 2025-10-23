@@ -129,6 +129,12 @@ def dashboard():
     
     user = user_dao.get_by_id(session['user_id'])
     
+    # Check if user exists
+    if not user:
+        flash('User not found. Please log in again.', 'danger')
+        session.clear()
+        return redirect(url_for('auth.login'))
+    
     if auth_service.is_staff(user):
         # Staff dashboard with analytics
         summary = analytics_service.get_dashboard_summary()
