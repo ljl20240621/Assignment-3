@@ -52,7 +52,7 @@
                 {% if not rental.returned %}
                 <hr>
                 
-                <form method="POST" action="{{ url_for('customer.return_vehicle', vehicle_id=vehicle.vehicle_id, source=request.args.get('source', 'my-rentals')) }}" id="returnForm">
+                <form method="POST" action="{{ url_for('customer.return_vehicle', vehicle_id=vehicle.vehicle_id, rental_id=rental.rental_id, source=request.args.get('source', 'my-rentals')) }}" id="returnForm">
                     <div class="mb-4">
                         <label class="form-label">
                             <strong>Actual Return Date & Time</strong>

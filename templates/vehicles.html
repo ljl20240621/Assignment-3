@@ -79,8 +79,8 @@
                                 <i class="bi bi-calendar-check"></i> Rental Start (Optional)
                             </label>
                             <div class="input-group">
-                                <input type="datetime-local" class="form-control" name="start_date" id="start_date" 
-                                       value="{{ current_start_date }}" min="{{ now().strftime('%Y-%m-%dT%H:%M') }}">
+                                <input type="text" class="form-control" name="start_date" id="start_date" 
+                                       value="{{ current_start_date }}" placeholder="Select start date" readonly>
                                 <button type="button" class="btn btn-outline-secondary clear-datetime" data-target="start_date" 
                                         style="display: {% if current_start_date %}block{% else %}none{% endif %};">
                                     <i class="bi bi-x"></i>
@@ -92,8 +92,8 @@
                                 <i class="bi bi-calendar-x"></i> Rental End (Optional)
                             </label>
                             <div class="input-group">
-                                <input type="datetime-local" class="form-control" name="end_date" id="end_date" 
-                                       value="{{ current_end_date }}" min="{{ now().strftime('%Y-%m-%dT%H:%M') }}">
+                                <input type="text" class="form-control" name="end_date" id="end_date" 
+                                       value="{{ current_end_date }}" placeholder="Select end date" readonly>
                                 <button type="button" class="btn btn-outline-secondary clear-datetime" data-target="end_date"
                                         style="display: {% if current_end_date %}block{% else %}none{% endif %};">
                                     <i class="bi bi-x"></i>
@@ -192,13 +192,71 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Flatpickr for date selection (date only)
+        const startDatePicker = flatpickr("#start_date", {
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            allowInput: false,
+            clickOpens: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                // Show/hide clear button
+                const clearBtn = document.querySelector('[data-target="start_date"]');
+                if (dateStr) {
+                    clearBtn.style.display = 'block';
+                } else {
+                    clearBtn.style.display = 'none';
+                }
+            }
+        });
+        
+        const endDatePicker = flatpickr("#end_date", {
+            dateFormat: "Y-m-d",
+            minDate: "today",
+            allowInput: false,
+            clickOpens: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                // Show/hide clear button
+                const clearBtn = document.querySelector('[data-target="end_date"]');
+                if (dateStr) {
+                    clearBtn.style.display = 'block';
+                } else {
+                    clearBtn.style.display = 'none';
+                }
+            }
+        });
+        
+        // Initialize display state
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        
+        if (!startDateInput.value) {
+            startDateInput.value = '';
+            startDateInput.placeholder = 'Select start date';
+        }
+        
+        if (!endDateInput.value) {
+            endDateInput.value = '';
+            endDateInput.placeholder = 'Select end date';
+        }
+        
         // Handle clear datetime buttons
         const clearButtons = document.querySelectorAll('.clear-datetime');
         clearButtons.forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const targetId = this.getAttribute('data-target');
                 const input = document.getElementById(targetId);
-                input.value = '';
+                
+                // Clear Flatpickr selection
+                if (targetId === 'start_date') {
+                    startDatePicker.clear();
+                    input.value = '';
+                    input.placeholder = 'Select start date';
+                } else if (targetId === 'end_date') {
+                    endDatePicker.clear();
+                    input.value = '';
+                    input.placeholder = 'Select end date';
+                }
+                
                 this.style.display = 'none';
             });
         });

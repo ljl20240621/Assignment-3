@@ -11,6 +11,55 @@
     </div>
 </div>
 
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_rentals }}</h4>
+                        <p class="card-text">Total Rentals</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-list-check fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">${{ "%.2f"|format(total_spent) }}</h4>
+                        <p class="card-text">Total Spent</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-currency-dollar fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ active_rentals }}</h4>
+                        <p class="card-text">Active Rentals</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-car-front fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Search and Filter Bar -->
 <div class="row mb-3">
     <div class="col-12">
@@ -49,33 +98,6 @@
 </div>
 
 {% if rental_history %}
-<div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h6>Total Rentals</h6>
-                <h3>{{ rental_history|length }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h6>Total Spent</h6>
-                <h3>${{ rental_history | sum(attribute='total_cost') | round(2) }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-light">
-            <div class="card-body">
-                <h6>Active Rentals</h6>
-                <h3>{{ rental_history | selectattr('returned', 'equalto', False) | list | length }}</h3>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -97,7 +119,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for rental in rental_history | reverse %}
+                            {% for rental in rental_history %}
                             {% set vehicle = vehicles_dict.get(rental.vehicle_id) %}
                             <tr>
                                 <td><code>{{ rental.vehicle_id }}</code></td>
@@ -122,7 +144,7 @@
                                 </td>
                                 <td>
                                     {% if not rental.returned %}
-                                    <a href="{{ url_for('customer.return_vehicle', vehicle_id=rental.vehicle_id, source='my-rentals') }}" class="btn btn-sm btn-warning">
+                                    <a href="{{ url_for('customer.return_vehicle', vehicle_id=rental.vehicle_id, rental_id=rental.rental_id, source='my-rentals') }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-arrow-return-left"></i> Return
                                     </a>
                                     {% else %}

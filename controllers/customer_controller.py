@@ -98,16 +98,16 @@ def vehicles():
             # If only one date is provided, use reasonable defaults
             if start_date and not end_date:
                 # If only start date: check from start to 30 days later
-                start_dt = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
                 end_dt = start_dt + timedelta(days=30)
             elif end_date and not start_date:
                 # If only end date: check from now to end date
                 start_dt = datetime.now()
-                end_dt = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
             else:
                 # Both dates provided
-                start_dt = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
-                end_dt = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+                start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+                end_dt = datetime.strptime(end_date, '%Y-%m-%d')
             
             # Validate date range
             if end_dt <= start_dt:
@@ -337,7 +337,9 @@ def return_vehicle(vehicle_id):
     elif source == 'my-rentals':
         return_to = 'customer.my_rentals'
     
-    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    # Get rental_id parameter
+    rental_id = request.args.get('rental_id')
+    
     user = user_dao.get_by_id(session['user_id'])
     
     # Check if user exists
@@ -346,19 +348,29 @@ def return_vehicle(vehicle_id):
         session.clear()
         return redirect(url_for('auth.login'))
     
-    if not vehicle:
-        flash('Vehicle not found.', 'danger')
-        return redirect(url_for(return_to))
-    
-    # Find active rental for this vehicle and user
+    # Find active rental by rental_id if provided, otherwise fallback to old method
     active_rental = None
-    for rental in user.rental_history:
-        if rental.vehicle_id == vehicle_id and not rental.returned:
-            active_rental = rental
-            break
+    if rental_id:
+        # Use rental_id to find the specific rental
+        for rental in user.rental_history:
+            if rental.rental_id == rental_id and not rental.returned:
+                active_rental = rental
+                break
+    else:
+        # Fallback to old method (for backward compatibility)
+        for rental in user.rental_history:
+            if rental.vehicle_id == vehicle_id and not rental.returned:
+                active_rental = rental
+                break
     
     if not active_rental:
         flash('No active rental found for this vehicle.', 'warning')
+        return redirect(url_for(return_to))
+    
+    # Get vehicle information from the rental record
+    vehicle = vehicle_dao.get_by_id(active_rental.vehicle_id)
+    if not vehicle:
+        flash('Vehicle not found.', 'danger')
         return redirect(url_for(return_to))
     
     if request.method == 'POST':
@@ -367,14 +379,9 @@ def return_vehicle(vehicle_id):
         try:
             # Convert datetime from YYYY-MM-DDTHH:MM to DD-MM-YYYY HH:MM
             return_dt = datetime.strptime(return_datetime, '%Y-%m-%dT%H:%M')
-            return_datetime_formatted = return_dt.strftime('%d-%m-%Y %H:%M')
-            
-            # Validate return datetime
             start_dt = datetime.strptime(active_rental.period.start_date, '%d-%m-%Y %H:%M')
-            if return_dt < start_dt:
-                flash('Return date & time cannot be before the rental start!', 'danger')
-                return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental, return_to=return_to)
-            
+            end_dt = datetime.strptime(active_rental.period.end_date, '%d-%m-%Y %H:%M')
+
             # Check if already returned (idempotent check)
             if active_rental.returned:
                 flash('This vehicle has already been returned.', 'info')
@@ -384,16 +391,33 @@ def return_vehicle(vehicle_id):
             success = rental_service.return_vehicle_by_id(active_rental.rental_id)
             
             if success:
+                # early return
+                if return_dt < start_dt:
+                    flash('Vehicle early returned successfully! 50% of the rental cost will be returned.', 'success')
+                    return redirect(url_for(return_to))
+                # late return
+                if return_dt > end_dt:
+                    flash('Vehicle late returned successfully! please pay the late return fee.', 'danger')
+                    return redirect(url_for(return_to))
+                # normal return
                 flash('Vehicle returned successfully!', 'success')
                 return redirect(url_for(return_to))
             else:
                 # Check if it was already returned during the process
                 user = user_dao.get_by_id(session['user_id'])
                 updated_rental = None
-                for rental in user.rental_history:
-                    if rental.vehicle_id == vehicle_id and not rental.returned:
-                        updated_rental = rental
-                        break
+                if rental_id:
+                    # Use rental_id to find the specific rental
+                    for rental in user.rental_history:
+                        if rental.rental_id == rental_id:
+                            updated_rental = rental
+                            break
+                else:
+                    # Fallback to old method
+                    for rental in user.rental_history:
+                        if rental.vehicle_id == vehicle_id and not rental.returned:
+                            updated_rental = rental
+                            break
                 
                 if updated_rental and updated_rental.returned:
                     flash('Vehicle was already returned.', 'info')
@@ -425,6 +449,15 @@ def my_rentals():
         session.clear()
         return redirect(url_for('auth.login'))
     
+    # Get all rental history for global statistics
+    all_rental_history = list(user.rental_history)
+    
+    # Calculate global statistics
+    total_rentals = len(all_rental_history)
+    total_spent = sum(rental.total_cost for rental in all_rental_history)
+    active_rentals = len([r for r in all_rental_history if not r.returned])
+    
+    # Apply filters to rental history
     rental_history = list(user.rental_history)
     
     # Status filter
@@ -449,6 +482,19 @@ def my_rentals():
                     filtered_history.append(rental)
         rental_history = filtered_history
     
+    # Sort rental history: first by status (active first), then by start date (descending)
+    def sort_key(rental):
+        # Status priority: active (False) comes before returned (True)
+        status_priority = 0 if not rental.returned else 1
+        
+        # Parse start date for sorting
+        from datetime import datetime
+        start_date = datetime.strptime(rental.period.start_date, '%d-%m-%Y %H:%M')
+        
+        return (status_priority, -start_date.timestamp())  # Negative for descending order
+    
+    rental_history.sort(key=sort_key)
+    
     # Paginate results
     pagination = paginate(rental_history, page, per_page=10)
     
@@ -466,7 +512,10 @@ def my_rentals():
                          pagination=pagination,
                          current_search=search,
                          current_status=status_filter,
-                         vehicles_dict=vehicles_dict)
+                         vehicles_dict=vehicles_dict,
+                         total_rentals=total_rentals,
+                         total_spent=total_spent,
+                         active_rentals=active_rentals)
 
 
 @customer_bp.route('/invoice')
