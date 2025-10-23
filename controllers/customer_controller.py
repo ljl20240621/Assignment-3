@@ -249,7 +249,7 @@ def rent_vehicle(vehicle_id):
             original_cost = vehicle.daily_rate * days
             discount_rate = (1 - discount_factor) * 100  # Convert to percentage
             
-            total_cost = rental_service.rent_vehicle(
+            rental_id, total_cost = rental_service.rent_vehicle(
                 vehicle_id,
                 session['user_id'],
                 period
@@ -262,7 +262,8 @@ def rent_vehicle(vehicle_id):
                                   total_cost=f'{total_cost:.2f}',
                                   original_cost=f'{original_cost:.2f}',
                                   discount_rate=f'{discount_rate:.2f}',
-                                  days=days))
+                                  days=days,
+                                  rental_id=rental_id))
         
         except ValueError as e:
             flash(str(e), 'danger')
@@ -379,8 +380,8 @@ def return_vehicle(vehicle_id):
                 flash('This vehicle has already been returned.', 'info')
                 return redirect(url_for(return_to))
             
-            # Return the vehicle
-            success = rental_service.return_vehicle(vehicle_id, session['user_id'])
+            # Return the vehicle using rental ID
+            success = rental_service.return_vehicle_by_id(active_rental.rental_id)
             
             if success:
                 flash('Vehicle returned successfully!', 'success')

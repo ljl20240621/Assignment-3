@@ -25,10 +25,10 @@ class RentalService:
         self.user_dao = user_dao
         self.rental_dao = rental_dao
     
-    def rent_vehicle(self, vehicle_id: str, renter_id: str, period: RentalPeriod) -> float:
+    def rent_vehicle(self, vehicle_id: str, renter_id: str, period: RentalPeriod) -> tuple[str, float]:
         """
         Rent a vehicle for a user.
-        Returns the total cost.
+        Returns (rental_id, total_cost).
         Raises exceptions if vehicle or user not found, or if vehicle not available.
         """
         vehicle = self.vehicle_dao.get_by_id(vehicle_id)
@@ -47,16 +47,11 @@ class RentalService:
         discount_factor = user.discount_factor(days)
         total_cost = vehicle.calculate_rental(period, discount_factor)
         
-        # Create rental record
-        vehicle.add_rental(renter_id, period, total_cost)
+        # Create rental record and get rental ID
+        rental_id = vehicle.add_rental(renter_id, period, total_cost)
         
-        # Create shared rental record
-        rental_record = RentalRecord(
-            vehicle_id=vehicle_id,
-            renter_id=renter_id,
-            period=period,
-            total_cost=total_cost
-        )
+        # Get the created rental record
+        rental_record = vehicle.get_rental_by_id(rental_id)
         
         # Add to user's history
         user.add_rental_record(rental_record)
@@ -69,7 +64,52 @@ class RentalService:
         self.user_dao.save()
         self.rental_dao.save()
         
-        return total_cost
+        return rental_id, total_cost
+    
+    def return_vehicle_by_id(self, rental_id: str) -> bool:
+        """
+        Return a vehicle by rental ID.
+        Returns True if successful, False otherwise.
+        """
+        # Find the rental record
+        rental_record = None
+        for record in self.rental_dao.get_all():
+            if record.rental_id == rental_id:
+                rental_record = record
+                break
+        
+        if not rental_record:
+            return False
+        
+        if rental_record.returned:
+            return True  # Already returned
+        
+        # Get the vehicle and mark as returned
+        vehicle = self.vehicle_dao.get_by_id(rental_record.vehicle_id)
+        if not vehicle:
+            return False
+        
+        # Mark as returned in vehicle
+        success = vehicle.return_rental(rental_id)
+        
+        if success:
+            # Update the user's rental history
+            user = self.user_dao.get_by_id(rental_record.renter_id)
+            if user:
+                for record in user.rental_history:
+                    if record.rental_id == rental_id:
+                        record.returned = True
+                        break
+            
+            # Update the shared rental record
+            rental_record.returned = True
+            
+            # Save changes
+            self.vehicle_dao.save()
+            self.user_dao.save()
+            self.rental_dao.save()
+        
+        return success
     
     def return_vehicle(self, vehicle_id: str, renter_id: str, period: Optional[RentalPeriod] = None) -> bool:
         """

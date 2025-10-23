@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple
 import sys
 import os
+import uuid
+from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.rental_period import RentalPeriod
@@ -23,6 +25,7 @@ class RentalRecord:
     Shared record of a single rental booking.
     This record is shared between vehicles and users for consistency.
     """
+    rental_id: str  # Unique identifier for this rental
     vehicle_id: str
     renter_id: str
     period: RentalPeriod
@@ -102,18 +105,34 @@ class Vehicle(ABC):
                 return False
         return True
     
-    def add_rental(self, renter_id: str, period: RentalPeriod, total_cost: float) -> None:
+    def add_rental(self, renter_id: str, period: RentalPeriod, total_cost: float) -> str:
         """
         Record a new rental in history.
-        Note: This method is called by VehicleRental system after creating shared RentalRecord.
+        Returns the unique rental ID.
         """
         # Defensive check: ensure vehicle is still available for this period
         if not self.is_available(period):
             raise OverlappingBookingError(f"Vehicle '{self.vehicle_id}' is no longer available for {period}.")
         
-        # Create rental record (this will be the same reference as in VehicleRental)
-        rental_record = RentalRecord(vehicle_id=self.vehicle_id, renter_id=renter_id, period=period, total_cost=total_cost)
+        # Generate unique rental ID
+        rental_id = self._generate_rental_id()
+        
+        # Create rental record
+        rental_record = RentalRecord(
+            rental_id=rental_id,
+            vehicle_id=self.vehicle_id, 
+            renter_id=renter_id, 
+            period=period, 
+            total_cost=total_cost
+        )
         self.__rental_history.append(rental_record)
+        return rental_id
+    
+    def _generate_rental_id(self) -> str:
+        """Generate a unique rental ID."""
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_id = str(uuid.uuid4())[:8]
+        return f"RENT_{timestamp}_{unique_id}"
 
 
     def get_total_rental_days(self) -> int:
@@ -135,11 +154,29 @@ class Vehicle(ABC):
     def get_returned_rentals(self) -> List[RentalRecord]:
         """Get all returned rental records."""
         return [rec for rec in self.__rental_history if rec.returned]
+    
+    def get_rental_by_id(self, rental_id: str) -> Optional[RentalRecord]:
+        """Get a rental record by its ID."""
+        for rental in self.__rental_history:
+            if rental.rental_id == rental_id:
+                return rental
+        return None
 
-    def return_rental(self, renter_id: str, period: Optional[RentalPeriod] = None) -> bool:
+    def return_rental(self, rental_id: str) -> bool:
         """
-        Mark a matching rental as returned. If period is None, return the most recent
-        unreturned rental for this renter. Returns True if something was marked returned.
+        Mark a rental as returned by rental ID.
+        Returns True if the rental was found and marked as returned.
+        """
+        for rental in self.__rental_history:
+            if rental.rental_id == rental_id and not rental.returned:
+                rental.returned = True
+                return True
+        return False
+    
+    def return_rental_by_renter(self, renter_id: str, period: Optional[RentalPeriod] = None) -> bool:
+        """
+        Mark a matching rental as returned by renter ID and optional period.
+        This is a backward compatibility method.
         """
         candidates = [r for r in self.__rental_history if r.renter_id == renter_id and not r.returned]
         
@@ -154,7 +191,6 @@ class Vehicle(ABC):
                     return True
             
             # If no exact match, try to find the most recent rental that overlaps
-            # This handles cases where the rental period might have been modified
             for r in candidates:
                 if (r.period.start_date == period.start_date or 
                     (r.period.start_date <= period.start_date and r.period.end_date >= period.start_date)):
@@ -163,7 +199,6 @@ class Vehicle(ABC):
             return False
         else:
             # No period given: pick the most recent outstanding rental for that renter
-            # Sort by start date to get the most recent one
             candidates.sort(key=lambda x: x.period.start_date, reverse=True)
             candidates[0].returned = True
             return True
