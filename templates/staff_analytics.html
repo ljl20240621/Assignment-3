@@ -2,6 +2,118 @@
 
 {% block title %}Analytics - Vehicle Rental System{% endblock %}
 
+{% block extra_css %}
+<style>
+.chart-container {
+    height: 400px;
+    width: 100%;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Revenue by Vehicle Type Chart
+    const vehicleTypeChart = echarts.init(document.getElementById('vehicleTypeChart'));
+    const vehicleTypeData = {{ summary.revenue_by_vehicle_type | tojson }};
+    const vehicleTypeOption = {
+        title: {
+            text: 'Revenue by Vehicle Type',
+            left: 'center'
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: ${c} ({d}%)'
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left'
+        },
+        series: [
+            {
+                name: 'Revenue',
+                type: 'pie',
+                radius: '50%',
+                data: Object.entries(vehicleTypeData).map(([name, value]) => ({
+                    name: name,
+                    value: value
+                })),
+                label: {
+                    show: true,
+                    formatter: function(params) {
+                        const total = Object.values(vehicleTypeData).reduce((sum, val) => sum + val, 0);
+                        const percentage = ((params.value / total) * 100).toFixed(1);
+                        return `${params.name}\n$${params.value.toFixed(2)}\n${percentage}%`;
+                    }
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }
+        ]
+    };
+    vehicleTypeChart.setOption(vehicleTypeOption);
+
+    // Revenue by User Type Chart
+    const userTypeChart = echarts.init(document.getElementById('userTypeChart'));
+    const userTypeData = {{ summary.revenue_by_user_type | tojson }};
+    const userTypeOption = {
+        title: {
+            text: 'Revenue by User Type',
+            left: 'center'
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: ${c} ({d}%)'
+        },
+        legend: {
+            orient: 'vertical',
+            left: 'left'
+        },
+        series: [
+            {
+                name: 'Revenue',
+                type: 'pie',
+                radius: '50%',
+                data: Object.entries(userTypeData).map(([name, value]) => ({
+                    name: name,
+                    value: value
+                })),
+                label: {
+                    show: true,
+                    formatter: function(params) {
+                        const total = Object.values(userTypeData).reduce((sum, val) => sum + val, 0);
+                        const percentage = ((params.value / total) * 100).toFixed(1);
+                        return `${params.name}\n$${params.value.toFixed(2)}\n${percentage}%`;
+                    }
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }
+        ]
+    };
+    userTypeChart.setOption(userTypeOption);
+
+    // Resize charts when window resizes
+    window.addEventListener('resize', function() {
+        vehicleTypeChart.resize();
+        userTypeChart.resize();
+    });
+});
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
@@ -52,18 +164,11 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Revenue by Vehicle Type</h5>
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Revenue by Vehicle Type</h5>
             </div>
             <div class="card-body">
                 {% if summary.revenue_by_vehicle_type %}
-                <table class="table">
-                    {% for vtype, revenue in summary.revenue_by_vehicle_type.items() %}
-                    <tr>
-                        <td><strong>{{ vtype }}</strong></td>
-                        <td class="text-end">${{ revenue|round(2) }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
+                <div id="vehicleTypeChart" class="chart-container"></div>
                 {% else %}
                 <p class="text-muted mb-0">No data available.</p>
                 {% endif %}
@@ -78,14 +183,7 @@
             </div>
             <div class="card-body">
                 {% if summary.revenue_by_user_type %}
-                <table class="table">
-                    {% for utype, revenue in summary.revenue_by_user_type.items() %}
-                    <tr>
-                        <td><strong>{{ utype }}</strong></td>
-                        <td class="text-end">${{ revenue|round(2) }}</td>
-                    </tr>
-                    {% endfor %}
-                </table>
+                <div id="userTypeChart" class="chart-container"></div>
                 {% else %}
                 <p class="text-muted mb-0">No data available.</p>
                 {% endif %}
@@ -99,7 +197,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="bi bi-trophy"></i> Most Rented Vehicles</h5>
+                <h5 class="mb-0"><i class="bi bi-trophy"></i> Most Rented Vehicles (Top 10)</h5>
             </div>
             <div class="card-body">
                 {% if most_rented %}
@@ -135,7 +233,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-warning">
-                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Least Rented Vehicles</h5>
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Least Rented Vehicles (Bottom 10)</h5>
             </div>
             <div class="card-body">
                 {% if least_rented %}

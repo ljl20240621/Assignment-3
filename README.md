@@ -160,6 +160,47 @@ Assignment-3/
 - Analytics dashboard (revenue, rentals, activity logs)
 - View all rental records with overdue tracking
 
+## Additional Features Beyond Core Requirements
+
+**Advanced User Interface:**
+- **Interactive Dashboard**: Clickable cards with hover effects for navigation
+- **ECharts Visualization**: Interactive pie charts for revenue analysis by vehicle type and user type
+- **Advanced Search & Filtering**: Multi-criteria search with date range filtering
+- **Responsive Design**: Bootstrap 5 with mobile-friendly layouts
+- **Real-time Feedback**: Auto-dismissing flash messages and form validation
+
+**Enhanced Data Management:**
+- **Soft Delete**: User deactivation instead of permanent deletion
+- **Unique Rental IDs**: UUID-based rental tracking for precise record management
+- **Data Consistency**: Automatic data synchronization across all storage layers
+- **Hour-precise Calculations**: Rental periods calculated to the hour for accuracy
+
+**Advanced Analytics:**
+- **Revenue Analytics**: Detailed breakdown by vehicle type and user type
+- **Activity Logs**: Comprehensive tracking of all system activities
+- **Overdue Management**: Automatic detection and tracking of overdue rentals
+- **Performance Metrics**: Most/least rented vehicles with statistics
+
+**User Experience Enhancements:**
+- **Availability Calendar**: Visual calendar showing vehicle availability with date restrictions
+- **Date Picker Integration**: Flatpickr for enhanced date/time selection
+- **Smart Defaults**: Intelligent date/time defaults based on business rules (2 PM rule)
+- **Pagination**: Efficient data display with configurable page sizes
+- **Search Functionality**: Global search across vehicles, users, and rental records
+
+**Business Logic Improvements:**
+- **Discount System**: Sophisticated discount calculation based on user type and rental duration
+- **Overlap Detection**: Advanced booking conflict detection and prevention
+- **Status Tracking**: Comprehensive rental status management (active, returned, overdue)
+- **Cost Calculation**: Dynamic pricing with automatic discount application
+
+**Technical Architecture:**
+- **MVC Pattern**: Clean separation of concerns with Flask Blueprints
+- **Service Layer**: Business logic encapsulation in dedicated service classes
+- **DAO Pattern**: Data access abstraction for maintainability
+- **Error Handling**: Comprehensive exception handling and user feedback
+- **Testing**: Extensive unit and integration test coverage (75% code coverage)
+
 ## Architecture
 
 The application follows MVC pattern using Flask Blueprints:
