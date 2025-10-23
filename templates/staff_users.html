@@ -19,6 +19,65 @@
     </div>
 </div>
 
+<!-- Search and Filter Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-search"></i> Search & Filter Users</h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('staff.users') }}">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="name" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ name_filter }}" placeholder="e.g., John">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   value="{{ username_filter }}" placeholder="e.g., john001">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="type" class="form-label">Type</label>
+                            <select class="form-select" id="type" name="type">
+                                <option value="">All Types</option>
+                                <option value="Staff" {% if type_filter == 'Staff' %}selected{% endif %}>Staff</option>
+                                <option value="Corporate" {% if type_filter == 'Corporate' %}selected{% endif %}>Corporate</option>
+                                <option value="Individual" {% if type_filter == 'Individual' %}selected{% endif %}>Individual</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="contact" class="form-label">Contact</label>
+                            <input type="text" class="form-control" id="contact" name="contact" 
+                                   value="{{ contact_filter }}" placeholder="e.g., john@email.com">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All</option>
+                                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                            <a href="{{ url_for('staff.users') }}" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-arrow-clockwise"></i> Reset
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="card">

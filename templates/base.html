@@ -130,12 +130,10 @@
             dateTimeInputs.forEach(function(input) {
                 input.addEventListener('click', function(e) {
                     try {
-                        // Modern browsers support showPicker()
                         if (this.showPicker) {
                             this.showPicker();
                         }
                     } catch (err) {
-                        // Fallback: just focus the input
                         this.focus();
                     }
                 });

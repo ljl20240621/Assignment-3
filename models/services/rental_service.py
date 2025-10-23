@@ -14,6 +14,16 @@ from dao.vehicle_dao import VehicleDAO
 from dao.user_dao import UserDAO
 from dao.rental_dao import RentalDAO
 
+# Import custom exceptions
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+from common.exceptions import (
+    VehicleNotFoundError, 
+    UserNotFoundError, 
+    VehicleNotAvailableError,
+    ReturnNotFoundError,
+    PersistenceError
+)
+
 
 class RentalService:
     """
@@ -33,14 +43,14 @@ class RentalService:
         """
         vehicle = self.vehicle_dao.get_by_id(vehicle_id)
         if not vehicle:
-            raise ValueError(f"Vehicle with ID '{vehicle_id}' not found.")
+            raise VehicleNotFoundError(vehicle_id)
         
         user = self.user_dao.get_by_id(renter_id)
         if not user:
-            raise ValueError(f"User with ID '{renter_id}' not found.")
+            raise UserNotFoundError(renter_id)
         
         if not vehicle.is_available(period):
-            raise ValueError(f"Vehicle '{vehicle_id}' is not available for the requested period.")
+            raise VehicleNotAvailableError(vehicle_id, period)
         
         # Calculate cost
         days = period.calculate_duration()
@@ -79,7 +89,7 @@ class RentalService:
                 break
         
         if not rental_record:
-            return False
+            raise ReturnNotFoundError("", "", None)  # rental_id not found
         
         if rental_record.returned:
             return True  # Already returned
@@ -87,7 +97,7 @@ class RentalService:
         # Get the vehicle and mark as returned
         vehicle = self.vehicle_dao.get_by_id(rental_record.vehicle_id)
         if not vehicle:
-            return False
+            raise VehicleNotFoundError(rental_record.vehicle_id)
         
         # Mark as returned in vehicle
         success = vehicle.return_rental(rental_id)

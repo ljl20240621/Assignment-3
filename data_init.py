@@ -61,7 +61,7 @@ def initialize_data():
         Car("CAR007", "Tesla", "Model 3", 2022, 110.0, 4),
         Car("CAR008", "Nissan", "Altima", 2020, 55.0, 4),
         Car("CAR009", "Hyundai", "Elantra", 2019, 40.0, 4),
-        Car("CAR010", "Kia", "Sorento", 2021, 70.0, 7),
+        Car("CAR010", "Kia", "Sorento", 2021, 70.0, 5),
         
         # Motorbikes
         Motorbike("BIKE001", "Honda", "CBR600RR", 2020, 35.0, 600),

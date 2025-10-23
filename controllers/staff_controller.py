@@ -37,8 +37,16 @@ def paginate(items, page, per_page=10):
 @staff_bp.route('/users')
 @staff_required
 def users():
-    """Staff: User management page."""
+    """Staff: User management page with search functionality."""
     user_dao = current_app.config['USER_DAO']
+    
+    # Get search parameters
+    search = request.args.get('search', '').strip()
+    name_filter = request.args.get('name', '').strip()
+    username_filter = request.args.get('username', '').strip()
+    type_filter = request.args.get('type', '').strip()
+    contact_filter = request.args.get('contact', '').strip()
+    status_filter = request.args.get('status', '').strip()
     
     page = request.args.get('page', 1, type=int)
     all_users = user_dao.get_all()
@@ -50,13 +58,52 @@ def users():
         session.clear()
         return redirect(url_for('auth.login'))
     
+    # Apply filters
+    filtered_users = all_users
+    
+    if search:
+        filtered_users = [u for u in filtered_users if 
+                         search.lower() in u.renter_id.lower() or
+                         search.lower() in u.name.lower() or
+                         search.lower() in u.username.lower() or
+                         search.lower() in u.kind.lower() or
+                         search.lower() in u.contact_info.lower()]
+    
+    if name_filter:
+        filtered_users = [u for u in filtered_users if 
+                      name_filter.lower() in u.name.lower()]
+    
+    if username_filter:
+        filtered_users = [u for u in filtered_users if 
+                        username_filter.lower() in u.username.lower()]
+    
+    if type_filter:
+        filtered_users = [u for u in filtered_users if 
+                        u.kind.lower() == type_filter.lower()]
+    
+    if contact_filter:
+        filtered_users = [u for u in filtered_users if 
+                        contact_filter.lower() in u.contact_info.lower()]
+    
+    if status_filter:
+        if status_filter.lower() == 'active':
+            filtered_users = [u for u in filtered_users if u.active]
+        elif status_filter.lower() == 'inactive':
+            filtered_users = [u for u in filtered_users if not u.active]
+    
     # Paginate results
-    pagination = paginate(all_users, page, per_page=10)
+    pagination = paginate(filtered_users, page, per_page=10)
     
     return render_template('staff_users.html', 
                          users=pagination['items'], 
                          pagination=pagination,
-                         user=user)
+                         user=user,
+                         search=search,
+                         name_filter=name_filter,
+                         username_filter=username_filter,
+                         type_filter=type_filter,
+                         contact_filter=contact_filter,
+                         status_filter=status_filter)
 
 
 @staff_bp.route('/users/add', methods=['GET', 'POST'])
@@ -219,21 +266,94 @@ def activate_user(user_id):
 @staff_bp.route('/vehicles')
 @staff_required
 def vehicles():
-    """Staff: Vehicle management page."""
+    """Staff: Vehicle management page with search functionality."""
     vehicle_dao = current_app.config['VEHICLE_DAO']
     user_dao = current_app.config['USER_DAO']
+    
+    # Get search parameters
+    search = request.args.get('search', '').strip()
+    id_filter = request.args.get('id', '').strip()
+    type_filter = request.args.get('type', '').strip()
+    make_filter = request.args.get('make', '').strip()
+    model_filter = request.args.get('model', '').strip()
+    year_filter = request.args.get('year', '').strip()
+    price_min = request.args.get('price_min', '').strip()
+    price_max = request.args.get('price_max', '').strip()
+    specs_filter = request.args.get('specs', '').strip()
     
     page = request.args.get('page', 1, type=int)
     all_vehicles = vehicle_dao.get_all()
     user = user_dao.get_by_id(session['user_id'])
     
+    # Apply filters
+    filtered_vehicles = all_vehicles
+    
+    if search:
+        filtered_vehicles = [v for v in filtered_vehicles if 
+                           search.lower() in v.vehicle_id.lower() or
+                           search.lower() in v.make.lower() or
+                           search.lower() in v.model.lower() or
+                           search.lower() in v.__class__.__name__.lower()]
+    
+    if id_filter:
+        filtered_vehicles = [v for v in filtered_vehicles if 
+                           id_filter.lower() in v.vehicle_id.lower()]
+    
+    if type_filter:
+        filtered_vehicles = [v for v in filtered_vehicles if 
+                           v.__class__.__name__.lower() == type_filter.lower()]
+    
+    if make_filter:
+        filtered_vehicles = [v for v in filtered_vehicles if 
+                           make_filter.lower() in v.make.lower()]
+    
+    if model_filter:
+        filtered_vehicles = [v for v in filtered_vehicles if 
+                           model_filter.lower() in v.model.lower()]
+    
+    if year_filter:
+        try:
+            year = int(year_filter)
+            if 2000 <= year <= 2025:  # Validate year range
+                filtered_vehicles = [v for v in filtered_vehicles if v.year == year]
+        except ValueError:
+            pass  # Invalid year format, ignore filter
+    
+    if price_min or price_max:
+        try:
+            min_price = float(price_min) if price_min else 0
+            max_price = float(price_max) if price_max else float('inf')
+            filtered_vehicles = [v for v in filtered_vehicles if min_price <= v.daily_rate <= max_price]
+        except ValueError:
+            pass  # Invalid price format, ignore filter
+    
+    if specs_filter:
+        if specs_filter == '2 Door':
+            filtered_vehicles = [v for v in filtered_vehicles if 
+                               v.__class__.__name__ == 'Car' and v.num_doors == 2]
+        elif specs_filter == '4 Door':
+            filtered_vehicles = [v for v in filtered_vehicles if 
+                               v.__class__.__name__ == 'Car' and v.num_doors == 4]
+        elif specs_filter == '5 Door':
+            filtered_vehicles = [v for v in filtered_vehicles if 
+                               v.__class__.__name__ == 'Car' and v.num_doors == 5]
+    
     # Paginate results
-    pagination = paginate(all_vehicles, page, per_page=10)
+    pagination = paginate(filtered_vehicles, page, per_page=10)
     
     return render_template('staff_vehicles.html', 
                          vehicles=pagination['items'],
                          pagination=pagination,
-                         user=user)
+                         user=user,
+                         search=search,
+                         id_filter=id_filter,
+                         type_filter=type_filter,
+                         make_filter=make_filter,
+                         model_filter=model_filter,
+                         year_filter=year_filter,
+                         price_min=price_min,
+                         price_max=price_max,
+                         specs_filter=specs_filter)
 
 
 @staff_bp.route('/vehicles/add', methods=['GET', 'POST'])

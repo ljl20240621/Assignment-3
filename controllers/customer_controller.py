@@ -5,6 +5,18 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from controllers import login_required, customer_required
 from datetime import datetime
 import json
+import sys
+import os
+
+# Import custom exceptions
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__))))
+from common.exceptions import (
+    VehicleNotFoundError, 
+    UserNotFoundError, 
+    VehicleNotAvailableError,
+    ReturnNotFoundError,
+    PersistenceError
+)
 
 customer_bp = Blueprint('customer', __name__)
 
@@ -258,8 +270,12 @@ def rent_vehicle(vehicle_id):
                                   days=days,
                                   rental_id=rental_id))
         
+        except (VehicleNotFoundError, UserNotFoundError, VehicleNotAvailableError) as e:
+            flash(str(e), 'danger')
         except ValueError as e:
             flash(str(e), 'danger')
+        except Exception as e:
+            flash(f'An unexpected error occurred: {str(e)}', 'danger')
     
     user = user_dao.get_by_id(session['user_id'])
     
@@ -418,8 +434,12 @@ def return_vehicle(vehicle_id):
                 else:
                     flash('Failed to return vehicle. Please try again.', 'danger')
         
+        except (VehicleNotFoundError, ReturnNotFoundError) as e:
+            flash(str(e), 'danger')
         except ValueError as e:
             flash(str(e), 'danger')
+        except Exception as e:
+            flash(f'An unexpected error occurred: {str(e)}', 'danger')
     print("return_to", return_to)
     return render_template('return_vehicle.html', vehicle=vehicle, user=user, rental=active_rental, return_to=return_to)
 
