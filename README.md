@@ -37,14 +37,33 @@ Required packages:
 - pytest 8.4.2
 - pytest-cov 7.0.0
 
-### 3. Verify Project Files
+### 3. Initialize Data
 
-The project includes pre-generated resources:
+Run the data initialization script to create sample data:
 
-- **Placeholder Images**: Located in `static/images/` directory (car.jpg, motorbike.jpg, truck.jpg)
-- **Sample Data**: Pre-initialized data files in `data/` directory (users.pkl, vehicles.pkl, rentals.pkl)
+```bash
+python3 data_init.py
+```
 
-Sample data includes 15 vehicles (5 cars, 5 motorbikes, 5 trucks) and 6 test users.
+This script initializes:
+
+**Vehicles (20 total):**
+- **10 Cars**: Toyota Camry, Honda Civic, BMW X5, Mercedes C-Class, Audi A4, Ford Mustang, Tesla Model 3, Nissan Altima, Hyundai Elantra, Kia Sorento
+- **5 Motorbikes**: Honda CBR600RR, Yamaha YZF-R1, Kawasaki Ninja 400, Ducati Monster 821, Suzuki GSX-R750
+- **5 Trucks**: Ford F-150, Chevrolet Silverado, Ram 1500, Toyota Tacoma, GMC Sierra
+
+**User Accounts (3 total):**
+- **Staff**: admin / admin123 (Administrative access)
+- **Corporate**: corp001 / password123 (15% discount on all rentals)
+- **Individual**: john001 / password123 (10% discount for rentals >7 days)
+
+**Data Files Created:**
+- `data/vehicles.pkl` - Vehicle inventory
+- `data/users.pkl` - User accounts
+- `data/rentals.pkl` - Rental records (initially empty)
+
+**Placeholder Images:**
+Located in `static/images/` directory (car.jpg, motorbike.jpg, truck.jpg, default.jpg)
 
 
 ## Running the Application
@@ -61,17 +80,14 @@ To stop the server, press `Ctrl+C` in the terminal.
 
 ## Default Login Credentials
 
-**Staff Accounts:**
+**Staff Account:**
 - Username: `admin` / Password: `admin123`
-- Username: `staff2` / Password: `staff123`
 
-**Corporate Accounts:**
-- Username: `corp001` / Password: `corp123`
-- Username: `corp002` / Password: `corp123`
+**Corporate Account:**
+- Username: `corp001` / Password: `password123`
 
-**Individual Accounts:**
-- Username: `ind001` / Password: `ind123`
-- Username: `ind002` / Password: `ind123`
+**Individual Account:**
+- Username: `john001` / Password: `password123`
 
 ## Testing
 
@@ -103,7 +119,7 @@ The project includes 51 test cases with 75% code coverage.
 Assignment-3/
 ├── app.py                      # Flask application configuration
 ├── run.py                      # Application entry point
-├── init_data.py               # Data initialization script
+├── data_init.py               # Data initialization script
 ├── requirements.txt           # Python dependencies
 │
 ├── controllers/               # Controller layer (Flask Blueprints)
@@ -171,7 +187,7 @@ taskkill /PID <PID> /F
 Ensure virtual environment is activated and dependencies are installed.
 
 **Missing data files:**
-Run `python3 init_data.py` to regenerate sample data.
+Run `python3 data_init.py` to regenerate sample data.
 
 ## Development Notes
 
