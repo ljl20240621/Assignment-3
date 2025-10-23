@@ -240,9 +240,7 @@
         new Date(now.getTime() + 24 * 60 * 60 * 1000) : 
         now;
     
-    // Default end date is the day after start date
-    const defaultEndDate = new Date(defaultStartDate.getTime() + 24 * 60 * 60 * 1000);
-    
+
     // Format dates for Flatpickr
     const formatDate = (date) => {
         const year = date.getFullYear();
@@ -254,20 +252,9 @@
     // Initialize Flatpickr for start date
     const startDatePicker = flatpickr("#start_date", {
         dateFormat: "Y-m-d",
-        minDate: "today",
+        minDate: formatDate(defaultStartDate),
         disable: disabledDates,
-        defaultDate: formatDate(defaultStartDate),
         onChange: function(selectedDates, dateStr, instance) {
-            // Update end date picker minimum date
-            if (selectedDates.length > 0) {
-                endDatePicker.set('minDate', dateStr);
-                // Auto-set end date to next day if not already set
-                if (!endDatePicker.selectedDates.length) {
-                    const nextDay = new Date(selectedDates[0]);
-                    nextDay.setDate(nextDay.getDate() + 1);
-                    endDatePicker.setDate(formatDate(nextDay));
-                }
-            }
             validateDateTimeInputs();
         }
     });
@@ -277,7 +264,6 @@
         dateFormat: "Y-m-d",
         minDate: formatDate(defaultStartDate),
         disable: disabledDates,
-        defaultDate: formatDate(defaultEndDate),
         onChange: function(selectedDates, dateStr, instance) {
             validateDateTimeInputs();
         }
@@ -304,7 +290,7 @@
         // Set default end time to 6 PM next day
         endTimeSelect.value = '18:00';
     };
-    
+
     // Set default times when page loads
     setDefaultTimes();
     
