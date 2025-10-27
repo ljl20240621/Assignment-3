@@ -234,6 +234,12 @@ def rent_vehicle(vehicle_id):
         end_date = request.form.get('end_date')
         end_time = request.form.get('end_time')
         
+        # validate the start and end date and time not none, if any is none, return error
+        if not start_date or not start_time or not end_date or not end_time:
+            flash('Start and end date and time are required.', 'danger')
+            return redirect(url_for('customer.rent_vehicle', vehicle_id=vehicle_id))
+        
+        
         try:
             # Combine date and time, then convert to DD-MM-YYYY HH:MM format
             start_datetime = f"{start_date}T{start_time}"
