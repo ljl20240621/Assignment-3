@@ -152,7 +152,7 @@ class RentalService:
             return True  # Already returned, consider it successful
         
         # Mark as returned in vehicle's history
-        success = vehicle.return_rental(renter_id, period)
+        success = vehicle.return_rental_by_renter(renter_id, period)
         
         if success:
             # Update the user's rental history
