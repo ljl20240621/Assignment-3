@@ -114,6 +114,7 @@
                                 <th>Duration</th>
                                 <th>Total Cost</th>
                                 <th>Status</th>
+                                <th>Overdue</th>
                                 <th>Invoice</th>
                                 <th>Action</th>
                             </tr>
@@ -134,6 +135,13 @@
                                     <span class="badge bg-success">Returned</span>
                                     {% else %}
                                     <span class="badge bg-primary">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if rental.period.is_overdue() %}
+                                    <span class="badge bg-danger">Yes</span>
+                                    {% else %}
+                                    <span class="badge bg-success">No</span>
                                     {% endif %}
                                 </td>
                                 <td>

@@ -138,6 +138,7 @@
                                 <th>Cost</th>
                                 <th>Status</th>
                                 <th>Overdue</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -188,6 +189,13 @@
                                     {% else %}
                                     <span class="text-muted">No</span>
                                     {% endif %}
+                                </td>
+                                <td>
+                                    {# view invoice button #}
+                                    <a href="{{ url_for('staff.view_invoice', vehicle_id=item.record.vehicle_id, start_date=item.record.period.start_date) }}" 
+                                       class="btn btn-sm btn-info" target="_blank">
+                                        <i class="bi bi-receipt"></i> View
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}

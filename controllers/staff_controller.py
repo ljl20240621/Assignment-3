@@ -590,3 +590,67 @@ def activities():
                          pagination=pagination,
                          user=user)
 
+
+@staff_bp.route('/invoice/<vehicle_id>/<start_date>')
+@staff_required
+def view_invoice(vehicle_id, start_date):
+    """View invoice for a specific rental (staff access)."""
+    # Get DAO objects from app config
+    user_dao = current_app.config['USER_DAO']
+    vehicle_dao = current_app.config['VEHICLE_DAO']
+    
+    user = user_dao.get_by_id(session['user_id'])
+    if not user:
+        flash('User not found. Please log in again.', 'danger')
+        session.clear()
+        return redirect(url_for('auth.login'))
+    
+    # Get vehicle information
+    vehicle = vehicle_dao.get_by_id(vehicle_id)
+    if not vehicle:
+        flash('Vehicle not found.', 'danger')
+        return redirect(url_for('staff.rentals'))
+    
+    # Find the rental record
+    rental_record = None
+    for rental in vehicle.rental_history:
+        if rental.period and rental.period.start_date == start_date:
+            rental_record = rental
+            break
+    
+    if not rental_record:
+        flash('Rental record not found.', 'danger')
+        return redirect(url_for('staff.rentals'))
+    
+    # Get renter information
+    renter = user_dao.get_by_id(rental_record.renter_id)
+    if not renter:
+        flash('Renter information not found.', 'danger')
+        return redirect(url_for('staff.rentals'))
+    
+    # Calculate invoice details
+    days = rental_record.period.calculate_duration()
+    discount_factor = renter.discount_factor(days)
+    
+    # Calculate original cost (before discount)
+    original_cost = rental_record.total_cost / discount_factor
+    
+    # Calculate discount rate as percentage
+    discount_rate = (1 - discount_factor) * 100
+    
+    # Format to 2 decimal places
+    total_cost = f"{rental_record.total_cost:.2f}"
+    original_cost = f"{original_cost:.2f}"
+    discount_rate = f"{discount_rate:.2f}"
+    
+    return render_template('rental_confirmation.html',
+                         vehicle=vehicle,
+                         user=renter,
+                         rental_record=rental_record,
+                         period=rental_record.period,
+                         total_cost=total_cost,
+                         original_cost=original_cost,
+                         discount_rate=discount_rate,
+                         days=days,
+                         staff_user=user)
+
