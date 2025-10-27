@@ -1,13 +1,4 @@
 # Flask Framework
 Flask==3.0.0
-Werkzeug==3.0.1
-
-# Image Processing
-Pillow==10.1.0
-
 # Testing Framework
 pytest==8.4.2
-pytest-cov==7.0.0
-
-# Development Dependencies
-python-dotenv==1.0.0
