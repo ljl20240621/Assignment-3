@@ -1,7 +1,3 @@
-"""
-Main Flask Application for Vehicle Rental System.
-Refactored with Blueprint architecture for better code organization.
-"""
 from flask import Flask
 from datetime import datetime
 import os
