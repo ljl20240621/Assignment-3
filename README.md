@@ -32,10 +32,8 @@ pip install -r requirements.txt
 ```
 
 Required packages:
-- Flask 3.1.0
-- Pillow 10.1.0
+- Flask 3.0.0
 - pytest 8.4.2
-- pytest-cov 7.0.0
 
 ### 3. Initialize Data
 
