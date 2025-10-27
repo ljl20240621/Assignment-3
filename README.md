@@ -109,7 +109,7 @@ Generate coverage report:
 pytest tests/ --cov=models --cov-report=html
 ```
 
-The project includes 51 test cases with 75% code coverage.
+The project includes 51 test cases with 71% code coverage.
 
 ## Project Structure
 
@@ -197,7 +197,7 @@ Assignment-3/
 - **Service Layer**: Business logic encapsulation in dedicated service classes
 - **DAO Pattern**: Data access abstraction for maintainability
 - **Error Handling**: Comprehensive exception handling and user feedback
-- **Testing**: Extensive unit and integration test coverage (75% code coverage)
+- **Testing**: Extensive unit and integration test coverage (71% code coverage)
 
 ## Architecture
 
