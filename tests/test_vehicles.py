@@ -144,8 +144,8 @@ class TestVehicleAvailability:
         period2 = RentalPeriod("03-01-2025 09:00", "07-01-2025 18:00")
         
         # Add and return rental
-        car.add_rental("USER001", period1, 150.0)
-        car.return_rental("USER001", period1)
+        rental_id = car.add_rental("USER001", period1, 150.0)
+        car.return_rental(rental_id)
         
         # Should be available now even for overlapping period
         assert car.is_available(period2) == True
@@ -160,8 +160,8 @@ class TestVehicleRentalHistory:
         period1 = RentalPeriod("01-01-2025 09:00", "05-01-2025 18:00")
         period2 = RentalPeriod("10-01-2025 09:00", "15-01-2025 18:00")
         
-        car.add_rental("USER001", period1, 150.0)
-        car.return_rental("USER001", period1)
+        rental_id1 = car.add_rental("USER001", period1, 150.0)
+        car.return_rental(rental_id1)
         car.add_rental("USER002", period2, 180.0)
         
         assert car.get_rental_count() == 2
